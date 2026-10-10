@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /hand.json
+
+Sitemap: https://yektapour.com/sitemap.xml
