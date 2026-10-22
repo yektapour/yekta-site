@@ -1,0 +1,27 @@
+name: IndexNow
+on:
+  workflow_run:
+    workflows: ["pages-build-deployment"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Send every page, not only the changed ones"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  ping:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Wait for the CDN to serve the new pages
+        run: sleep 60
+      - name: Ping IndexNow
+        env:
+          ALL: ${{ github.event_name == 'workflow_dispatch' && inputs.all && '1' || '0' }}
+        run: python3 .github/indexnow.py
