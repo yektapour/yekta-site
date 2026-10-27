@@ -44,6 +44,7 @@ Process name: overthink(paint)ing
 ## Articles
 - [Futility: A Painting That Pushes Back](https://yektapour.com/articles/futility/): An interactive painting: a man pushes a block against a wall, five blows bring it down, and behind it stands the same wall.
 - [An Image, Listened To](https://yektapour.com/articles/an-image-listened-to/): An interactive work that takes any image and turns it into sound and film, by looking at it the way a person does.
+- [Globus Sensation: A Painting That Screams When You Touch It](https://yektapour.com/articles/globus-sensation/): An interactive painting: touch the melting man, and a face bursts onto the wall in blood, screams from far away, and slowly fades.
 - [Attention Is the Medium.](https://yektapour.com/articles/attention-is-the-medium/): Before paint, before code, before anything. An essay by YEKTA on where attention goes, and where the work goes with it.
 - [The Hours Nobody Applauds.](https://yektapour.com/articles/the-hours-nobody-applauds/): On dead time, slow growth, and the work behind the work. An essay by YEKTA.
 - [Make What Only You Can See.](https://yektapour.com/articles/make-what-only-you-can-see/): Notes on creativity, timing and paying attention. An essay by YEKTA.
