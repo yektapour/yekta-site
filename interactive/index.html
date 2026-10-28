@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/" data-site>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; frame-src 'self' https://www.youtube-nocookie.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interactive | YEKTA</title>
+<meta name="theme-color" content="#0d0d0d">
+<meta name="color-scheme" content="dark">
+<style>html,body{background:#0d0d0d;color:#ece8e1}</style>
+<link rel="icon" href="./favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="96x96" href="./favicon-96.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./site.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="preload" href="font/geist.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="font/clash-display.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="description" content="Interactive works by YEKTA: paintings you can touch, push and listen to.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Interactive | YEKTA">
+<meta property="og:description" content="Interactive works by YEKTA: paintings you can touch, push and listen to.">
+<meta property="og:image" content="https://yektapour.com/og/card-interactive.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Futility">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Interactive | YEKTA"><meta name="twitter:description" content="Interactive works by YEKTA: paintings you can touch, push and listen to."><meta name="twitter:image" content="https://yektapour.com/og/card-interactive.jpg">
+  <script type="module" crossorigin src="./assets/index-BQegjoAG.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/style-CXsvwsWn.css">
+<link rel="canonical" href="https://yektapour.com/interactive/">
+<link rel="alternate" type="application/rss+xml" title="YEKTA, Articles" href="https://yektapour.com/feed.xml">
+<meta property="og:url" content="https://yektapour.com/interactive/">
+<meta property="og:site_name" content="YEKTA">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"CollectionPage","@id":"https://yektapour.com/interactive/#page","url":"https://yektapour.com/interactive/","name":"Interactive | YEKTA","hasPart":[{"@type":"CreativeWork","name":"Futility","url":"https://yektapour.com/interactive/futility/"},{"@type":"CreativeWork","name":"An Image, Listened To","url":"https://yektapour.com/interactive/an-image-listened-to/"}]},{"@type":"Person","@id":"https://yektapour.com/#yekta","name":"YEKTA","alternateName":"Hossein Yektapour","jobTitle":"Digital painter","description":"YEKTA is the artist name of Hossein Yektapour, a digital painter and former art director who spent fifteen years making images for advertising before turning to his own work. He makes conceptual digital paintings and interactive works, many of them tied together by a recurring red thread. His paintings are collected as NFTs on objkt and networked.art. Selected works include Vertigo, Undestined, The Witness, Inner Peace and Yekta.","url":"https://yektapour.com/","sameAs":["https://x.com/hosseinyektapo1","https://www.instagram.com/yektagrid/","https://www.youtube.com/@yektapour","https://linktr.ee/hosseinyektapour"]}]}</script>
+</head>
+<body>
+<div id="pre" aria-hidden="true"><i></i><span>YEKTA</span></div><noscript><style>#pre{display:none}</style></noscript>
+<h1 class="sr">Interactive works by YEKTA</h1><ul class="sr"><li><a href="/interactive/futility/">Futility</a>: An interactive painting: a man pushes a block against a wall, five blows bring it down, and behind it stands the same wall.</li><li><a href="/interactive/an-image-listened-to/">An Image, Listened To</a>: An interactive work that takes any image and turns it into sound and film, by looking at it the way a person does.</li></ul>
+<canvas id="hands" aria-hidden="true"></canvas>
+<canvas id="thread" aria-hidden="true"></canvas>
+<p class="sel" id="sel" aria-live="polite">Select</p>
+<button class="sr" id="hl" type="button">Select the left hand</button><button class="sr" id="hr" type="button">Select the right hand</button>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="brand" id="brand">YEKTA</div>
+<i class="hairline" id="hairline"></i>
+<p class="sub" id="sub">overthink(paint)ing</p>
+<button class="snd" id="snd" type="button" aria-label="Toggle sound">Sound on</button>
+<nav class="nav" id="nav" aria-label="Main">
+  <button type="button" data-go="works">Works</button>
+  <button type="button" data-go="interactive">Interactive</button>
+  <button type="button" data-go="videos" hidden>Videos</button>
+  <button type="button" data-go="articles">Articles</button>
+  <button type="button" data-go="about">About</button>
+  <button type="button" data-go="contact">Contact</button>
+</nav>
+
+<div class="hint" id="hint"><div class="ht"><span id="hintText">Touch</span></div><div class="dots"><i></i><i></i><i></i></div></div>
+<button class="skip" id="skip" type="button">Skip</button>
+<div class="scrollhint" id="scrollHint"><span>Scroll</span><i></i></div>
+
+<main id="page">
+  <section class="hero" id="hero" aria-hidden="true"></section>
+
+  <section class="works" id="works">
+    <div class="word-zone zw" data-word="WORKS" data-align="left"></div>
+    <ul class="sr" id="wlist" aria-label="All works"></ul>
+    <div class="gal wall" id="gal" data-st="W"><div class="wall-stage" id="wstage"><div class="wgroup" id="wgroup"></div></div><div class="wvig"></div></div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="word-zone zc" data-word="CONTACT" data-align="right"></div>
+    <div class="text rv" data-st="L">
+      <h2 class="big">Pull the thread.</h2>
+      <p class="lead">Open to collaborations, commissions and conversations.</p>
+      <div class="links" id="links"></div>
+    </div>
+    <div class="word-zone zu" data-word="UP" data-align="right"></div>
+    <footer>&copy; 2026 YEKTA</footer>
+  </section>
+</main>
+<div class="gcur" id="gcur" aria-hidden="true"></div>
+<button class="up-hit" id="up" type="button" aria-label="Back to the top"></button>
+
+<div class="view" id="gallery" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Works" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="view-in"><div class="masonry" id="masonry"></div></div>
+</div>
+<div class="view" id="about" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="aboutTitle" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="about-in">
+    <figure class="about-art"><canvas id="pfp" aria-hidden="true"></canvas><figcaption class="sr">Portrait of YEKTA drawn in white particles</figcaption></figure>
+    <div class="about-text">
+      <p class="about-k">About</p>
+      <h2 class="about-t" id="aboutTitle">YEKTA</h2>
+      <p>YEKTA is the name Hossein Yektapour paints under. A digital painter, he spent fifteen years as an art director making images for others before turning to his own.</p>
+      <p>The work is conceptual and quiet: bodies that come apart, faces that turn into objects, and a red thread that keeps returning. It is the line that ties a thought to what it costs.</p>
+      <p><em>overthink(paint)ing</em> is how he names the process: thinking a feeling all the way through, until it has no choice but to become a picture.</p>
+      <p>Alongside painting he makes interactive and generative work.</p>
+      <div class="about-links" id="aboutLinks"></div>
+    </div>
+  </div>
+</div>
+<div class="view" id="articles" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="artTitle" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="art-in" id="artIn"></div>
+</div>
+<div class="view" id="interactive" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Interactive" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="view-in"><div class="ia-grid" id="iaGrid"></div></div>
+</div>
+<div class="view" id="videos" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Videos" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="view-in"><div class="v-grid" id="vGrid"></div></div>
+</div>
+<div class="view" id="sonic" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Interactive work" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="sonic-in" id="sonicIn"></div>
+</div>
+<div class="sheet" id="sheet" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Work details" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="sheet-in" id="sheetIn"></div>
+</div>
+
+</body>
+</html>
