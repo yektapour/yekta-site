@@ -3,7 +3,7 @@
 <head>
 <base href="/" data-site>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; frame-src 'self' https://www.youtube-nocookie.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>YEKTA, P | 3D sculpture</title>
@@ -24,8 +24,8 @@
 <meta property="og:description" content="P (2022), 3d sculpture by YEKTA. A clay figure falls headfirst onto a pedestal, a small blue bird perched on its finger. The only calm thing in the fall.">
 <meta property="og:image" content="https://yektapour.com/og/work-p.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="YEKTA, P. 3d sculpture by Hossein Yektapour">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="YEKTA, P | 3D sculpture"><meta name="twitter:description" content="P (2022), 3d sculpture by YEKTA. A clay figure falls headfirst onto a pedestal, a small blue bird perched on its finger. The only calm thing in the fall."><meta name="twitter:image" content="https://yektapour.com/og/work-p.jpg">
-  <script type="module" crossorigin src="./assets/index-5YzU0Hdu.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/style-CpZFyDMo.css">
+  <script type="module" crossorigin src="./assets/index-B7L62sOi.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/style-CXsvwsWn.css">
 <link rel="canonical" href="https://yektapour.com/work/p/">
 <link rel="alternate" type="application/rss+xml" title="YEKTA, Articles" href="https://yektapour.com/feed.xml">
 <meta property="og:url" content="https://yektapour.com/work/p/">
@@ -48,6 +48,7 @@
 <nav class="nav" id="nav" aria-label="Main">
   <button type="button" data-go="works">Works</button>
   <button type="button" data-go="interactive">Interactive</button>
+  <button type="button" data-go="videos" hidden>Videos</button>
   <button type="button" data-go="articles">Articles</button>
   <button type="button" data-go="about">About</button>
   <button type="button" data-go="contact">Contact</button>
@@ -106,6 +107,10 @@
 <div class="view" id="interactive" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Interactive" aria-hidden="true" inert>
   <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
   <div class="view-in"><div class="ia-grid" id="iaGrid"></div></div>
+</div>
+<div class="view" id="videos" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Videos" aria-hidden="true" inert>
+  <button class="close" type="button" aria-label="Close"><i></i><i></i></button>
+  <div class="view-in"><div class="v-grid" id="vGrid"></div></div>
 </div>
 <div class="view" id="sonic" data-lenis-prevent role="dialog" aria-modal="true" aria-label="Interactive work" aria-hidden="true" inert>
   <button class="close" type="button" aria-label="Close"><i></i><i></i></button>

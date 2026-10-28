@@ -1,0 +1,25 @@
+name: Videos
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    concurrency: videos
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the YouTube channel
+        run: python3 .github/yt_sync.py
+      - name: Save and publish when something changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add yt
+          if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
+          git -c user.name="YEKTA" -c user.email="h.yektapour@gmail.com" commit -m "Videos: sync with YouTube"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
