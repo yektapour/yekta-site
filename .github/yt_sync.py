@@ -39,6 +39,14 @@ for v in items.values():
         except urllib.error.HTTPError as e: v['short'] = False if e.code in (301, 302, 303) else v['short']
     except Exception: pass
     v['checked'] = 1
+# live stream recordings are kept out of the site (only edited videos are shown)
+for v in items.values():
+    if 'livechk' in v: continue
+    try:
+        page = get(f'https://www.youtube.com/watch?v={v["id"]}')
+        v['live'] = '"isLiveContent":true' in page or '"isLive":true' in page
+        v['livechk'] = 1
+    except Exception: pass
 # thumbnails, stored on the site so they load fast (and everywhere)
 for v in items.values():
     f = f'{OUT}/thumbs/{v["id"]}.jpg'
