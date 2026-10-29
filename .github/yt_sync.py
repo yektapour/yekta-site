@@ -27,6 +27,17 @@ for e in feed.findall('a:entry', ns):
     link = e.find('a:link', ns).get('href', '')
     items[vid] = {'id': vid, 'title': e.find('a:title', ns).text or '', 'published': e.find('a:published', ns).text,
                   'short': '/shorts/' in link or items.get(vid, {}).get('short', False)}
+# the channel's Videos tab is its own playlist (UULF + channel id): only videos in it are shown on the site
+# (no Shorts, no live streams). A video keeps its mark after it scrolls out of the 15 newest.
+try:
+    tab = ET.fromstring(get(f'https://www.youtube.com/feeds/videos.xml?playlist_id=UULF{cid[2:]}'))
+    ids = [e.find('yt:videoId', ns).text for e in tab.findall('a:entry', ns)]
+    pub = [e.find('a:published', ns).text for e in tab.findall('a:entry', ns)]
+    oldest = min(pub) if len(pub) >= 15 else ''
+    for v in items.values():
+        if v['id'] in ids: v['vtab'] = True
+        elif v['published'] >= oldest: v['vtab'] = False
+except Exception as e: print('videos tab feed failed:', e)
 # shorts are not always marked in the feed: ask YouTube once per new video
 for v in items.values():
     if 'checked' in v: continue
