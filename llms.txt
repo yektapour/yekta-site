@@ -49,6 +49,7 @@ Process name: overthink(paint)ing
 - [Globus Sensation: A Painting That Screams When You Touch It](https://yektapour.com/articles/globus-sensation/): An interactive painting: touch the melting man, and a face bursts onto the wall in blood, screams from far away, and slowly fades.
 - [Futility: A Painting That Pushes Back](https://yektapour.com/articles/futility/): An interactive painting: a man pushes a block against a wall, five blows bring it down, and behind it stands the same wall.
 - [An Image, Listened To](https://yektapour.com/articles/an-image-listened-to/): An interactive work that takes any image and turns it into sound and film, by looking at it the way a person does.
+- [Nobody Is Waiting for Your Next Painting.](https://yektapour.com/articles/nobody-is-waiting-for-your-next-painting/): On deadlines, and the work that never gets one. An essay by YEKTA.
 - [Vibe Coding Made Me a Better Painter.](https://yektapour.com/articles/vibe-coding-made-me-a-better-painter/): I went to make paintings move. I came back seeing them differently. An essay by YEKTA.
 - [Success Won't Fix It.](https://yektapour.com/articles/success-wont-fix-it/): What making art actually asks of you, and what it doesn't give back. An essay by YEKTA.
 - [Attention Is the Medium.](https://yektapour.com/articles/attention-is-the-medium/): Before paint, before code, before anything. An essay by YEKTA on where attention goes, and where the work goes with it.
