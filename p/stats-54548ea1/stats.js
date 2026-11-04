@@ -15,11 +15,19 @@
 
   let lastDays = null, key = get(KEY), range = get('yekta_stats_range') || '30', busy = 0;
 
-  async function api(path, params = {}) {
+  /* GoatCounter allows about 4 API requests a second (each call here is two: a CORS check and the request),
+     so calls go out one at a time, spaced, and retry once if the server pushes back */
+  let lastCall = 0;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  async function api(path, params = {}, tries = 3) {
     const q = new URLSearchParams(params).toString();
-    const r = await fetch(`${API}${path}${q ? '?' + q : ''}`, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' });
+    const gap = 650 - (Date.now() - lastCall); if (gap > 0) await wait(gap);
+    lastCall = Date.now();
+    let r;
+    try { r = await fetch(`${API}${path}${q ? '?' + q : ''}`, { headers: { Authorization: 'Bearer ' + key }, cache: 'no-store' }); }
+    catch (e) { if (tries > 1) { await wait(1600); return api(path, params, tries - 1); } throw new Error('Could not reach GoatCounter. Check your connection (or an ad blocker) and refresh.'); }
     if (r.status === 401 || r.status === 403) { const e = new Error('auth'); e.auth = 1; throw e; }
-    if (r.status === 429) throw new Error('Too many requests. Wait a minute and refresh.');
+    if (r.status === 429) { if (tries > 1) { await wait(2500); return api(path, params, tries - 1); } throw new Error('GoatCounter is busy. Wait a minute and refresh.'); }
     if (!r.ok) throw new Error('GoatCounter answered ' + r.status);
     return r.json();
   }
@@ -95,48 +103,53 @@
       <footer><span id="upd"></span><span><button type="button" id="rf">Refresh</button> · <button type="button" id="out">Forget key on this device</button></span></footer>
     </div>`;
     $('.ranges').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b || b.dataset.r === range) return; range = b.dataset.r; set('yekta_stats_range', range); $$('.ranges button').forEach(x => x.setAttribute('aria-pressed', x === b)); load(); });
-    $('#rf').addEventListener('click', load);
+    $('#rf').addEventListener('click', () => load(true));
     $('#out').addEventListener('click', () => { set(KEY, null); key = null; gate(); });
     load();
   }
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
   /* ---------- data ---------- */
-  async function load() {
+  /* results are kept for a few minutes, so switching ranges back and forth stays instant */
+  const CACHE = {};
+  async function cached(path, params) {
+    const k = path + '?' + new URLSearchParams(params);
+    const c = CACHE[k]; if (c && Date.now() - c.t < 5 * 60e3) return c.v;
+    const v = await api(path, params); CACHE[k] = { t: Date.now(), v }; return v;
+  }
+  async function load(force) {
+    if (force === true) for (const k in CACHE) delete CACHE[k];
     const id = ++busy, sp = span();
     $('.wrap').classList.add('load');
+    $('#upd').textContent = 'Loading…';
+    const live = () => id === busy;
     try {
-      const [tot, hits, refs, loc, size, br, sys, lang] = await Promise.all([
-        api('/stats/total', sp),
-        api('/stats/hits', { ...sp, limit: 100 }),
-        api('/stats/toprefs', { ...sp, limit: 50 }),
-        api('/stats/locations', { ...sp, limit: 50 }),
-        api('/stats/sizes', { ...sp, limit: 20 }),
-        api('/stats/browsers', { ...sp, limit: 20 }),
-        api('/stats/systems', { ...sp, limit: 20 }),
-        api('/stats/languages', { ...sp, limit: 20 }).catch(() => ({ stats: [] }))
-      ]);
-      if (id !== busy) return;
+      const tot = await cached('/stats/total', sp); if (!live()) return;
       const total = tot.total || 0;
-      const pages = (hits.hits || []).filter(h => !h.event);
-      const refList = (refs.stats || []);
-      kpis(total, tot.stats || [], pages, refList);
       lastDays = tot.stats || []; chart(lastDays);
+      kpis(total, lastDays, [], []);
+      const hits = await cached('/stats/hits', { ...sp, limit: 100 }); if (!live()) return;
+      const pages = (hits.hits || []).filter(h => !h.event);
       list('#p-pages', 'Pages', pages.map(h => { const p = page(h); return { n: p.t, tag: p.kind, c: h.count }; }), total, 12);
+      const refs = await cached('/stats/toprefs', { ...sp, limit: 50 }); if (!live()) return;
+      const refList = refs.stats || [];
+      kpis(total, lastDays, pages, refList, true);
       list('#p-refs', 'Where visitors came from', refList.map(s => ({ n: refName(s), c: s.count })), total, 8);
-      list('#p-loc', 'Countries', (loc.stats || []).map(s => ({ n: s.name || 'Unknown', c: s.count })), total, 8);
-      list('#p-size', 'Devices', (size.stats || []).map(s => ({ n: s.name || 'Unknown', c: s.count })), total, 8);
-      list('#p-br', 'Browsers', (br.stats || []).map(s => ({ n: s.name || 'Unknown', c: s.count })), total, 8);
-      list('#p-sys', 'Systems', (sys.stats || []).map(s => ({ n: s.name || 'Unknown', c: s.count })), total, 8);
-      list('#p-lang', 'Languages', (lang.stats || []).map(s => ({ n: s.name || 'Unknown', c: s.count })), total, 8);
+      $('.wrap').classList.remove('load');
+      const more = [['#p-loc', 'Countries', '/stats/locations', 50], ['#p-size', 'Devices', '/stats/sizes', 20], ['#p-br', 'Browsers', '/stats/browsers', 20], ['#p-sys', 'Systems', '/stats/systems', 20], ['#p-lang', 'Languages', '/stats/languages', 20]];
+      for (const [sel, title, path, limit] of more) {
+        let d; try { d = await cached(path, { ...sp, limit }); } catch (e) { if (e.auth) throw e; d = { stats: [] }; }
+        if (!live()) return;
+        list(sel, title, (d.stats || []).map(s => ({ n: s.name || 'Unknown', c: s.count })), total, 8);
+      }
       $('#upd').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' · Counts are unique visitors';
     } catch (er) {
       if (er.auth) { set(KEY, null); key = null; return gate('The key was not accepted. Paste it again.'); }
-      $('#upd').textContent = er.message || 'Could not load the stats.';
-    } finally { if (id === busy) $('.wrap').classList.remove('load'); }
+      if (live()) $('#upd').textContent = er.message || 'Could not load the stats.';
+    } finally { if (live()) $('.wrap').classList.remove('load'); }
   }
 
-  function kpis(total, days, pages, refs) {
+  function kpis(total, days, pages, refs, again) {
     const today = days.length ? days[days.length - 1].daily || 0 : 0;
     const top = pages.filter(h => h.path !== '/')[0];
     const ref = refs.filter(s => s.name)[0];
@@ -146,7 +159,7 @@
       <div class="kpi"><p class="k">Today</p><b data-n="${today}">0</b><small>${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</small></div>
       <div class="kpi"><p class="k">Most viewed</p><b class="s">${top ? esc(page(top).t) : '—'}</b><small>${top ? fmt(top.count) + ' visitors' : 'no visits yet'}</small></div>
       <div class="kpi"><p class="k">Top source</p><b class="s">${ref ? esc(ref.name) : '—'}</b><small>${ref ? fmt(ref.count) + ' visitors' : 'no referrals yet'}</small></div>`;
-    $$('#kpis b[data-n]').forEach(b => countUp(b, +b.dataset.n));
+    $$('#kpis b[data-n]').forEach(b => again ? (b.textContent = fmt(+b.dataset.n)) : countUp(b, +b.dataset.n));
   }
   function countUp(el, to) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches || to < 2) { el.textContent = fmt(to); return; }
