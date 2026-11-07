@@ -2,13 +2,33 @@
  "channel": "UCZEsguNUORbpBVoxmewQizg",
  "items": [
   {
+   "id": "2AOGXLePlDo",
+   "title": "overthink(paint)ing",
+   "published": "2026-11-07T14:13:27+00:00",
+   "short": false,
+   "vtab": false,
+   "checked": 1,
+   "live": false,
+   "livechk": 1
+  },
+  {
+   "id": "QAb0cFvnCKQ",
+   "title": "I Painted a Man Whose Touch Makes Walls Scream",
+   "published": "2026-11-07T12:23:17+00:00",
+   "short": false,
+   "vtab": true,
+   "checked": 1,
+   "live": false,
+   "livechk": 1
+  },
+  {
    "id": "K0AuhzwCDDY",
    "title": "overthink(paint)ing",
    "published": "2026-11-07T07:19:22+00:00",
    "short": false,
    "vtab": false,
    "checked": 1,
-   "live": true,
+   "live": false,
    "livechk": 1
   },
   {
@@ -26,7 +46,7 @@
    "title": "I Painted a Man Melting Into His Own Screams | Painting \u2192 Interactive Art",
    "published": "2026-11-05T10:30:06+00:00",
    "short": false,
-   "vtab": true,
+   "vtab": false,
    "checked": 1,
    "live": false,
    "livechk": 1
