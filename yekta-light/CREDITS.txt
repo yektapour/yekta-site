@@ -1,0 +1,10 @@
+Yekta Light — free 3D lighting color picker. https://yektapour.com
+
+3D models
+- Male head: "Lee Perry-Smith" head scan by Infinite-Realities (www.ir-ltd.net),
+  Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/). Converted/quantized.
+- Female head: "Woman's Head" by Artur Loewental (plaster, The Collection, Lincoln),
+  scan from Three D Scans (threedscans.com, Oliver Laric) — published without copyright restrictions. Simplified.
+- Skull: "Skull" by Vladimir Petkovic, Khronos glTF-Sample-Assets (ScatteringSkull),
+  CC0 1.0 Universal. Simplified.
+All other forms are procedural.
