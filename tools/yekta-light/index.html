@@ -2,330 +2,184 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.goatcounter.com; font-src 'self'; media-src 'self'; connect-src 'self' https://*.goatcounter.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.goatcounter.com; font-src 'self'; media-src 'self'; connect-src 'self' blob: data: https://*.goatcounter.com; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0c0c0d">
-<title>Yekta Light | Free 3D light color picker for painters</title>
-<meta name="description" content="Light a real 3D form and pick the exact color the light creates. Free for Photoshop and Clip Studio Paint, by YEKTA.">
+<title>Yekta Light | Free online 3D light color picker for painters</title>
+<meta name="description" content="Light a posable 3D figure in your browser and pick the exact colors the light creates: highlight, halftone, core shadow, reflected light. Free, by YEKTA.">
 <link rel="canonical" href="https://yektapour.com/tools/yekta-light/">
 <link rel="icon" type="image/png" href="/tools/yekta-light/assets/img/icon-96.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="YEKTA">
 <meta property="og:url" content="https://yektapour.com/tools/yekta-light/">
-<meta property="og:title" content="Yekta Light | Free 3D light color picker for painters">
-<meta property="og:description" content="Light a real 3D form and pick the exact color the light creates. Free for Photoshop and Clip Studio Paint.">
+<meta property="og:title" content="Yekta Light | Free online 3D light color picker for painters">
+<meta property="og:description" content="Light a posable 3D figure in your browser and pick the exact colors the light creates. Free.">
 <meta property="og:image" content="https://yektapour.com/og/card-tool-yekta-light.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Yekta Light, the 3D light color picker for painters">
+<meta property="og:image:alt" content="Yekta Light, the online 3D light color picker for painters">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://yektapour.com/og/card-tool-yekta-light.jpg">
 <link rel="preload" href="/tools/yekta-light/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","@id":"https://yektapour.com/tools/yekta-light/#app","name":"Yekta Light","description":"Yekta Light lets you light a real 3D form, a scanned head, a skull, a sphere, and pick the exact color the light creates: highlight, halftone, core shadow, reflected light. Free for Photoshop and Clip Studio Paint.","applicationCategory":"DesignApplication","operatingSystem":"Windows, macOS","softwareVersion":"2.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://yektapour.com/tools/yekta-light/assets/img/top.webp","url":"https://yektapour.com/tools/yekta-light/","author":{"@id":"https://yektapour.com/#person"}},{"@type":"Person","@id":"https://yektapour.com/#person","name":"Hossein Yektapour","alternateName":"YEKTA","url":"https://yektapour.com/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"YEKTA","item":"https://yektapour.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://yektapour.com/tools/"},{"@type":"ListItem","position":3,"name":"Yekta Light","item":"https://yektapour.com/tools/yekta-light/"}]}]}</script>
+<link rel="modulepreload" href="/tools/yekta-light/assets/vendor/three.module.js">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","@id":"https://yektapour.com/tools/yekta-light/#app","name":"Yekta Light","description":"Light a posable 3D figure in your browser and pick the exact colors the light creates: highlight, halftone, terminator, core shadow, reflected light. Free.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires WebGL","softwareVersion":"3.0","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://yektapour.com/tools/yekta-light/assets/img/tile-960.webp","url":"https://yektapour.com/tools/yekta-light/","author":{"@id":"https://yektapour.com/#person"}},{"@type":"Person","@id":"https://yektapour.com/#person","name":"Hossein Yektapour","alternateName":"YEKTA","url":"https://yektapour.com/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"YEKTA","item":"https://yektapour.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://yektapour.com/tools/"},{"@type":"ListItem","position":3,"name":"Yekta Light","item":"https://yektapour.com/tools/yekta-light/"}]}]}</script>
 <style>
 @font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(/tools/yekta-light/assets/fonts/inter.woff2) format('woff2')}
-:root{--bg:#0c0c0d;--panel:#141415;--surface:#1b1b1d;--fg:#ebe8e2;--mute:#8a8780;--line:#2b2b2f;--amber:#f3b44a;--on-amber:#1a1408;--r:14px}
+:root{--bg:#0c0c0d;--panel:#141415;--surface:#1b1b1d;--surface2:#232326;--fg:#ebe8e2;--mute:#8a8780;--line:#2b2b2f;--amber:#f3b44a;--on-amber:#1a1408;--r:12px;--panel-w:384px}
 *{box-sizing:border-box;margin:0;padding:0}
-html{background:var(--bg);scroll-behavior:smooth}
-body{background:var(--bg);color:var(--fg);font:400 16px/1.6 'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html,body{height:100%;background:var(--bg)}
+body{color:var(--fg);font:400 13px/1.45 'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
 a{color:inherit}
-img,video{display:block;max-width:100%;height:auto}
-.wrap{width:min(1180px,100% - 48px);margin:0 auto}
-.lbl{font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--amber)}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.btn{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:14px 24px;font-weight:600;font-size:15px;text-decoration:none;transition:transform .2s,background .2s,border-color .2s,box-shadow .3s}
-.btn-amber{background:var(--amber);color:var(--on-amber);box-shadow:0 0 0 rgba(243,180,74,0)}
-.btn-amber:hover{transform:translateY(-1px);box-shadow:0 10px 40px rgba(243,180,74,.25)}
-.btn-line{border:1px solid var(--line);color:var(--fg)}
-.btn-line:hover{border-color:var(--mute)}
-:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
 /* top bar */
-.top{position:sticky;top:0;z-index:10;background:rgba(12,12,13,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid transparent;transition:border-color .3s}
-.top.s{border-color:var(--line)}
-.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo i{width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 14px 3px rgba(243,180,74,.55)}
-.logo b{font-weight:800;letter-spacing:.2em;font-size:15px}
-.logo span{font-weight:300;color:var(--mute);font-size:15px}
-.top nav{display:flex;gap:26px;font-size:13px;color:var(--mute)}
-.top nav a{text-decoration:none;transition:color .2s}
-.top nav a:hover{color:var(--fg)}
+.top{flex:none;height:52px;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid var(--line);background:var(--bg)}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo i{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px 3px rgba(243,180,74,.5)}
+.logo b{font-weight:800;letter-spacing:.2em;font-size:14px}
+.logo span{font-weight:300;color:var(--mute);font-size:14px}
+.crumb{color:var(--mute);font-size:12px;display:flex;gap:8px;align-items:center}
+.crumb a{text-decoration:none}.crumb a:hover{color:var(--fg)}
+.top .sp{flex:1}
+.top .free{border:1px solid rgba(243,180,74,.5);color:var(--amber);border-radius:999px;padding:3px 10px;font-size:11px}
 
-/* hero */
-.hero{position:relative;padding:72px 0 56px;overflow:hidden}
-.hero::before{content:'';position:absolute;left:62%;top:-160px;width:720px;height:720px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(243,180,74,.16),rgba(243,180,74,0));pointer-events:none}
-.hero .wrap{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center}
-.badges{display:flex;gap:8px;margin-bottom:26px}
-.badge{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--mute)}
-.badge.free{border-color:rgba(243,180,74,.5);color:var(--amber)}
-h1{font-weight:800;font-size:clamp(44px,6.6vw,88px);line-height:.98;letter-spacing:-.035em}
-h1 em{font-style:normal;color:var(--amber)}
-.hero p.lead{margin:26px 0 34px;max-width:520px;color:#cfccc6;font-weight:300;font-size:clamp(16px,1.35vw,19px)}
-.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
-.hero small{display:block;margin-top:16px;font-size:13px;color:var(--mute)}
-.shot{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--panel);box-shadow:0 40px 120px rgba(0,0,0,.55)}
-.hero .shot{max-width:440px;justify-self:end}
+/* layout: model left, tools right */
+.app{flex:1;min-height:0;display:flex}
+.stage{position:relative;flex:1;min-width:0;background:#0f0f10}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.panel{flex:none;width:var(--panel-w);border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
 
-/* video */
-.film{padding:8px 0 96px}
-.film .shot{position:relative}
-.film video{width:100%;background:#000}
-.film .v916{display:none}
-.film p{margin-top:14px;font-size:13px;color:var(--mute);text-align:center}
+/* viewport overlays */
+.ov{position:absolute;display:flex;gap:6px;align-items:center;pointer-events:none}
+.ov>*{pointer-events:auto}
+.ov.tl{left:14px;top:14px;flex-wrap:wrap;max-width:calc(100% - 28px)}
+.ov.bl{left:14px;bottom:14px;color:var(--mute);font-size:12px;pointer-events:none;max-width:calc(100% - 360px)}
+@media (max-width:1180px){.ov.bl{display:none}}
+.ov.br{right:14px;bottom:14px}
+.seg{display:flex;background:rgba(20,20,21,.86);border:1px solid var(--line);border-radius:999px;padding:3px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.seg button{padding:5px 11px;border-radius:999px;color:var(--mute);font-size:12px;white-space:nowrap}
+.seg button:hover{color:var(--fg)}
+.seg button.on{background:var(--surface2);color:var(--fg)}
+.seg button.amber.on{background:var(--amber);color:var(--on-amber)}
+.loading{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;color:var(--mute);font-size:12px;letter-spacing:.12em;text-transform:uppercase;background:#0f0f10;transition:opacity .4s}
+.loading.done{opacity:0;pointer-events:none}
+.loading .bar{width:180px;height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.loading .bar i{display:block;height:100%;width:0;background:var(--amber);transition:width .2s}
+.loupe{position:absolute;width:64px;height:64px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 8px 24px rgba(0,0,0,.5);pointer-events:none;display:none;transform:translate(-50%,-130%)}
 
-/* problem */
-.problem{padding:96px 0;border-top:1px solid var(--line);text-align:center}
-.problem ul{list-style:none;margin:30px 0 26px;display:flex;flex-direction:column;gap:6px}
-.problem li{font-weight:300;font-size:clamp(24px,3.2vw,42px);color:var(--mute);letter-spacing:-.01em}
-.problem h2{font-weight:800;font-size:clamp(34px,5vw,64px);letter-spacing:-.03em;line-height:1.05}
-.problem h2 em{font-style:normal;color:var(--amber)}
+/* picked color + palette (always visible) */
+.pickbox{flex:none;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.pick{display:flex;gap:12px;align-items:center}
+.pick .sw{width:56px;height:56px;border-radius:10px;border:1px solid rgba(255,255,255,.08);flex:none}
+.pick .info{flex:1;min-width:0}
+.pick .hx{font:600 18px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em}
+.pick .sub{color:var(--mute);font-size:11px;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--fg);background:var(--surface)}
+.btn:hover{border-color:#45454b}
+.btn.on{border-color:var(--amber);color:var(--amber)}
+.btn.amber{background:var(--amber);border-color:var(--amber);color:var(--on-amber);font-weight:600}
+.fam{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-top:12px}
+.fam button{aspect-ratio:1;border-radius:6px;border:1px solid rgba(255,255,255,.06);position:relative}
+.fam button:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.35)}
+.famlbl{display:flex;justify-content:space-between;color:var(--mute);font-size:10px;margin-top:4px;letter-spacing:.04em}
+.ramp{display:flex;height:14px;border-radius:5px;overflow:hidden;margin-top:10px}
+.ramp button{flex:1;height:100%}
+.hist{display:flex;gap:4px;margin-top:10px;min-height:16px;flex-wrap:wrap}
+.hist button{width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.06)}
 
-/* values strip */
-.values{padding:0 0 96px}
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.trio figure{margin:0}
-.trio figcaption{margin-top:10px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);text-align:center}
+/* tabs */
+.tabs{flex:none;display:flex;border-bottom:1px solid var(--line);padding:0 8px}
+.tabs button{flex:1;padding:11px 0 10px;color:var(--mute);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--fg)}
+.tabs button.on{color:var(--fg);border-color:var(--amber)}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 16px 28px}
+.scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+.pane{display:none}.pane.on{display:block}
+h3{font-size:10px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between}
+h3 .r{color:var(--mute);letter-spacing:.04em;text-transform:none;font-weight:400;font-size:11px}
+.row{display:flex;align-items:center;gap:10px;margin:7px 0}
+.row>label{width:84px;flex:none;color:var(--mute);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:#cfccc6;font-size:12px;background:var(--surface)}
+.chip:hover{border-color:#45454b;color:var(--fg)}
+.chip.on{border-color:var(--amber);color:var(--amber)}
 
-/* features */
-.features{padding:96px 0;border-top:1px solid var(--line)}
-.head{max-width:640px;margin-bottom:56px}
-.head h2{margin-top:14px;font-weight:800;font-size:clamp(30px,4vw,52px);line-height:1.05;letter-spacing:-.03em}
-.feat{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:44px 0;border-top:1px solid var(--line)}
-.feat:nth-of-type(even) .txt{order:2}
-.feat h3{margin:12px 0 14px;font-weight:800;font-size:clamp(24px,2.6vw,34px);letter-spacing:-.02em;line-height:1.1}
-.feat p{color:#cfccc6;font-weight:300;max-width:500px}
-.feat p+p{margin-top:12px}
-.feat .media{display:grid;gap:14px}
-.feat .media.two{grid-template-columns:1fr 1fr;align-items:start}
-.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:44px}
-.mini div{background:var(--bg);padding:30px 28px 32px}
-.mini h3{margin:10px 0 10px;font-weight:800;font-size:22px;letter-spacing:-.01em}
-.mini p{color:#cfccc6;font-weight:300;font-size:15px}
-.mini p+p{margin-top:10px}
+/* slider */
+.sl{flex:1;position:relative;height:22px;display:flex;align-items:center;cursor:ew-resize;touch-action:none}
+.sl .tr{position:absolute;left:0;right:0;height:3px;border-radius:3px;background:var(--line)}
+.sl .fi{position:absolute;height:3px;border-radius:3px;background:var(--amber)}
+.sl .kn{position:absolute;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.sl:hover .kn{transform:scale(1.15)}
+.val{width:44px;flex:none;text-align:right;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#cfccc6;background:none;border:0;padding:2px 0}
+.val:focus{outline:1px solid var(--line);border-radius:4px;color:var(--fg)}
+input[type=color]{width:30px;height:24px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:2px;cursor:pointer;flex:none}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-webkit-color-swatch{border:0;border-radius:4px}
+.toggle{position:relative;width:32px;height:18px;border-radius:999px;background:var(--line);flex:none;transition:background .2s}
+.toggle::after{content:'';position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--fg);transition:transform .2s}
+.toggle.on{background:var(--amber)}.toggle.on::after{transform:translateX(14px);background:var(--on-amber)}
 
-/* downloads */
-.dl{padding:96px 0;border-top:1px solid var(--line);position:relative;overflow:hidden}
-.dl::before{content:'';position:absolute;left:50%;top:-260px;width:900px;height:600px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(243,180,74,.10),rgba(243,180,74,0));pointer-events:none}
-.cards{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.card{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px 22px 22px}
-.card h3{font-weight:800;font-size:18px;letter-spacing:-.01em}
-.card .req{font-size:13px;color:var(--mute);min-height:40px;margin-bottom:14px}
-.card .btn{justify-content:center;margin-top:auto;padding:12px 18px;font-size:14px}
-.card .guide{margin-top:8px;text-align:center;font-size:13px;color:var(--mute);text-decoration:underline;text-underline-offset:3px}
-.card .guide:hover{color:var(--fg)}
-.card.main{border-color:rgba(243,180,74,.45)}
-.fine{position:relative;margin-top:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;font-size:13px;color:var(--mute)}
-.fine b{display:block;color:var(--fg);font-weight:600;margin-bottom:4px}
-.userguide{position:relative;margin-top:30px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 24px}
-.userguide p{color:#cfccc6;font-weight:300}
-.facts{position:relative;margin-top:30px;display:flex;gap:28px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
-.facts b{color:var(--fg);font-weight:600}
+/* light ball */
+.lightwrap{display:flex;gap:14px;align-items:center}
+.ball{width:150px;height:150px;flex:none;touch-action:none;cursor:crosshair;border-radius:50%}
+.lightwrap .side{flex:1;display:flex;flex-direction:column;gap:6px}
+.note{color:var(--mute);font-size:11px;line-height:1.5;margin-top:6px}
 
-/* credits + footer */
-.credits{padding:72px 0;border-top:1px solid var(--line)}
-.credits ul{list-style:none;margin-top:20px;display:grid;gap:10px;max-width:820px}
-.credits li{font-size:14px;color:var(--mute);font-weight:300}
-.credits li b{color:var(--fg);font-weight:500}
-footer{border-top:1px solid var(--line);padding:30px 0 40px}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
-footer a{text-decoration:none}
-footer a:hover{color:var(--fg)}
+/* pose: body map */
+.body{position:relative;width:100%;aspect-ratio:1.25;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px}
+.body svg{position:absolute;inset:0;width:100%;height:100%}
+.body .jd{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid var(--mute);background:var(--bg)}
+.body .jd:hover{border-color:var(--fg)}
+.body .jd.on{border-color:var(--amber);background:var(--amber);box-shadow:0 0 10px rgba(243,180,74,.6)}
+.body .jd.set::after{content:'';position:absolute;right:-5px;top:-5px;width:5px;height:5px;border-radius:50%;background:var(--amber)}
+.body .cap{position:absolute;left:12px;top:10px;font-weight:600;font-size:13px}
+.body .hint{position:absolute;left:12px;bottom:9px;right:12px;color:var(--mute);font-size:10.5px}
+.hand{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kbd{font:10px ui-monospace,monospace;border:1px solid var(--line);border-radius:4px;padding:1px 4px;color:var(--mute)}
+.foot{color:var(--mute);font-size:11px;margin-top:22px;line-height:1.6;border-top:1px solid var(--line);padding-top:12px}
+.foot a{color:#cfccc6}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--fg);color:#111;padding:8px 14px;border-radius:999px;font-weight:600;font-size:12px;opacity:0;transition:.25s;pointer-events:none;z-index:20}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.nogl{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--mute)}
 
-@media (max-width:980px){
-  .hero .wrap{grid-template-columns:1fr;gap:40px}
-  .hero .shot{justify-self:start;max-width:360px}
-  .feat{grid-template-columns:1fr;gap:28px}
-  .feat:nth-of-type(even) .txt{order:0}
-  .cards{grid-template-columns:1fr 1fr}
-  .mini{grid-template-columns:1fr}
-  .fine{grid-template-columns:1fr}
+@media (max-width:900px){
+  body{overflow:auto;height:auto}
+  .app{flex-direction:column}
+  .stage{height:62vh;min-height:360px;flex:none}
+  .panel{width:100%;border-left:0;border-top:1px solid var(--line)}
+  .scroll{overflow:visible}
+  .crumb{display:none}
+  .ov.tl{left:10px;top:10px}
 }
-@media (max-width:640px){
-  .wrap{width:calc(100% - 32px)}
-  .top nav a:not(.home){display:none}
-  .hero{padding:44px 0 40px}
-  .film .v169{display:none}
-  .film .v916{display:block;max-width:380px;margin:0 auto}
-  .film .shot.vert{max-width:380px;margin:0 auto}
-  .problem,.features,.dl{padding:72px 0}
-  .trio{gap:8px}
-  .trio figcaption{font-size:10px;letter-spacing:.14em}
-  .cards{grid-template-columns:1fr}
-  .feat .media.two{grid-template-columns:1fr}
-}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+@media (max-width:420px){.ball{width:124px;height:124px}.top .free{display:none}}
 </style>
-<script data-goatcounter="https://yektapour.goatcounter.com/count" async src="/gc.js"></script>
 </head>
 <body>
-
-<header class="top" id="top">
-  <div class="wrap">
-    <a class="logo" href="#hero" aria-label="Yekta Light"><i></i><b>YEKTA</b><span>light</span></a>
-    <nav aria-label="Page">
-      <a href="#features">Features</a>
-      <a href="#download">Download</a>
-      <a class="home" href="/">yektapour.com</a>
-    </nav>
-  </div>
+<header class="top">
+  <a class="logo" href="/" aria-label="YEKTA home"><i></i><b>YEKTA</b><span>light</span></a>
+  <nav class="crumb" aria-label="Breadcrumb"><a href="/tools/">Tools</a><span>/</span><span>Yekta Light</span></nav>
+  <span class="sp"></span>
+  <span class="free">Free</span>
 </header>
-
-<main>
-  <section class="hero" id="hero">
-    <div class="wrap">
-      <div>
-        <div class="badges"><span class="badge free">Free</span><span class="badge">Version 2.0</span><span class="badge">Photoshop + Clip Studio Paint</span></div>
-        <h1>Paint with <em>real light.</em></h1>
-        <p class="lead">Yekta Light lets you light a real 3D form, a scanned head, a skull, a sphere, and pick the exact color the light creates: highlight, halftone, core shadow, reflected light. No more muddy shadows or guessed colors. Free for Photoshop and Clip Studio Paint.</p>
-        <div class="cta">
-          <a class="btn btn-amber" href="#download">Download free</a>
-          <a class="btn btn-line" href="#film">Watch the walkthrough</a>
-        </div>
-        <small>The 3D light color picker for painters.</small>
-      </div>
-      <div class="shot"><img src="/tools/yekta-light/assets/img/top.webp" width="900" height="1113" alt="The Yekta Light panel: a lit 3D head and a sphere with light controls" fetchpriority="high"></div>
-    </div>
+<main class="app">
+  <section class="stage" id="stage" aria-label="3D viewport">
+    <div class="ov tl" id="ovtl"></div>
+    <div class="ov bl" id="status">Click the figure to pick a color · drag to orbit · right-drag to pan · scroll to zoom</div>
+    <div class="ov br" id="ovbr"></div>
+    <div class="loupe" id="loupe"></div>
+    <div class="loading" id="loading"><span>Loading figure</span><div class="bar"><i id="lbar"></i></div></div>
+    <div class="nogl" id="nogl">Yekta Light needs WebGL. Please open this page in a recent version of Chrome, Edge, Safari or Firefox.</div>
   </section>
-
-  <section class="film" id="film" aria-label="Walkthrough video">
-    <div class="wrap">
-      <div class="shot v169"><video controls playsinline preload="none" poster="/tools/yekta-light/assets/img/poster-16x9.webp" width="1920" height="1080" aria-label="Yekta Light, two minute walkthrough"><source src="/tools/yekta-light/assets/video/walkthrough-16x9.mp4" type="video/mp4"></video></div>
-      <div class="shot vert v916"><video controls playsinline preload="none" poster="/tools/yekta-light/assets/img/poster-9x16.webp" width="1080" height="1920" aria-label="Yekta Light, sixty second walkthrough"><source src="/tools/yekta-light/assets/video/walkthrough-9x16.mp4" type="video/mp4"></video></div>
-      <p>A short walkthrough of Yekta Light.</p>
-    </div>
-  </section>
-
-  <section class="problem" aria-labelledby="pb">
-    <div class="wrap">
-      <p class="lbl">01 | The problem</p>
-      <ul>
-        <li>Muddy shadows?</li>
-        <li>Guessing where the light falls?</li>
-        <li>Skin that looks flat?</li>
-      </ul>
-      <h2 id="pb">Paint with <em>real light.</em></h2>
-    </div>
-  </section>
-
-  <section class="values" aria-label="Color, Notan and five values">
-    <div class="wrap trio">
-      <figure><div class="shot"><img src="/tools/yekta-light/assets/img/vp-color.webp" width="852" height="852" loading="lazy" decoding="async" alt="A lit head and sphere in full color"></div><figcaption>Color</figcaption></figure>
-      <figure><div class="shot"><img src="/tools/yekta-light/assets/img/vp-notan.webp" width="852" height="852" loading="lazy" decoding="async" alt="The same view as Notan, two values"></div><figcaption>Notan</figcaption></figure>
-      <figure><div class="shot"><img src="/tools/yekta-light/assets/img/vp-5.webp" width="852" height="852" loading="lazy" decoding="async" alt="The same view in five value groups"></div><figcaption>Five values</figcaption></figure>
-    </div>
-  </section>
-
-  <section class="features" id="features" aria-labelledby="ft">
-    <div class="wrap">
-      <div class="head"><p class="lbl">02 | Features</p><h2 id="ft">Light it. Pick it.</h2></div>
-
-      <article class="feat">
-        <div class="txt"><p class="lbl">Forms</p><h3>Real 3D forms</h3><p>Male and female head scans, an anatomical skull, plus sphere, egg, cube, cylinder, cone, torus, drapery and an organic form. Five camera angles and Ortho / 85 / 50 / 35 mm lenses.</p></div>
-        <div class="media"><div class="shot"><img src="/tools/yekta-light/assets/img/heads-value-modes.webp" width="1280" height="320" loading="lazy" decoding="async" alt="Female head, male head and skull shown in value modes"></div><div class="shot"><img src="/tools/yekta-light/assets/img/toolbars.webp" width="900" height="516" loading="lazy" decoding="async" alt="Toolbars: forms, camera angles, lenses, backdrop and value modes"></div></div>
-      </article>
-
-      <article class="feat">
-        <div class="txt"><p class="lbl">Light</p><h3>Light like a photographer</h3><p>Drag the sun anywhere: in front, at the side or behind for rim light. One click portrait setups: Rembrandt, Loop, Butterfly, Split, Rim, Under. Key and second light with real color temperature in Kelvin, sky light, ground bounce and rim light.</p></div>
-        <div class="media"><div class="shot"><img src="/tools/yekta-light/assets/img/sec-light.webp" width="900" height="816" loading="lazy" decoding="async" alt="Light settings: portrait setups, key and sky, rim and second light"></div></div>
-      </article>
-
-      <article class="feat">
-        <div class="txt"><p class="lbl">Values</p><h3>Values first</h3><p>Notan (two values), three and five value groups, grayscale, and a same value highlighter that shows every area with the value you picked. Planes mode turns any form into a faceted block in.</p></div>
-        <div class="media"><div class="shot"><img src="/tools/yekta-light/assets/img/vp-notan.webp" width="852" height="852" loading="lazy" decoding="async" alt="A head in Notan, two values"></div></div>
-      </article>
-
-      <article class="feat">
-        <div class="txt"><p class="lbl">Pick</p><h3>Pick lit color</h3><p>Click the form to get the physically lit color. Named light families, Highlight, Light, Halftone, Terminator, Core shadow, Reflected, Occlusion, Cast shadow, Rim, ready to paint. Pin the ones you love.</p></div>
-        <div class="media two"><div class="shot"><img src="/tools/yekta-light/assets/img/families.webp" width="900" height="546" loading="lazy" decoding="async" alt="Light families with the picked color and its HEX value"></div><div class="shot"><img src="/tools/yekta-light/assets/img/big.webp" width="864" height="591" loading="lazy" decoding="async" alt="Big palette of light families"></div></div>
-      </article>
-
-      <article class="feat">
-        <div class="txt"><p class="lbl">Skin</p><h3>Skin that breathes</h3><p>Subsurface scattering warms the terminator like real skin. Shadow tint pushes your shadows cool or warm without changing their value.</p></div>
-        <div class="media"><div class="shot"><img src="/tools/yekta-light/assets/img/sec-material.webp" width="900" height="369" loading="lazy" decoding="async" alt="Material settings: specular, gloss, metal and skin SSS"></div></div>
-      </article>
-
-      <article class="feat">
-        <div class="txt"><p class="lbl">Color</p><h3>Total color control</h3><p>Every color is editable: base, highlight, SSS, key light, second light, sky, bounce, rim, ground, shadow tint, environment reflections and the backdrop behind the form.</p><p>Color wheel, HSV / RGB sliders, an OKLab color grid and 12 presets (Warm skin, Deep skin, Gold, Chrome, Glossy plastic, Matte clay, Plaster cast, Anime cel, Neon rim night, Sunset, Overcast, Campfire).</p></div>
-        <div class="media two"><div class="shot"><img src="/tools/yekta-light/assets/img/sec-color.webp" width="900" height="741" loading="lazy" decoding="async" alt="Color settings with color wheel and HSV and RGB sliders"></div><div class="shot"><img src="/tools/yekta-light/assets/img/sec-presets.webp" width="900" height="693" loading="lazy" decoding="async" alt="Twelve material and light presets"></div><div class="shot"><img src="/tools/yekta-light/assets/img/sec-grid.webp" width="900" height="789" loading="lazy" decoding="async" alt="OKLab color grid"></div></div>
-      </article>
-
-      <div class="mini">
-        <div><p class="lbl">Mud</p><h3>No more mud</h3><p>A low chroma warning flags colors that will read muddy. One click restores the color while keeping its value.</p></div>
-        <div><p class="lbl">Apps</p><h3>Works where you paint</h3><p>Photoshop: a real panel. Sets your foreground / background color, follows your foreground, adds colors to Swatches.</p><p>Clip Studio Paint: a floating window that stays on top, with a big palette for the CSP eyedropper (Windows and macOS).</p></div>
-        <div><p class="lbl">Speed</p><h3>Fast and light</h3><p>Rendering is split into tiny slices, so Photoshop and Clip Studio never freeze. Nothing runs while you are not using it.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="dl" id="download" aria-labelledby="dlh">
-    <div class="wrap">
-      <div class="head"><p class="lbl">03 | Download</p><h2 id="dlh">Free. For Photoshop and Clip Studio Paint.</h2></div>
-      <div class="cards">
-        <div class="card main">
-          <h3>Photoshop</h3>
-          <p class="req">Windows &amp; macOS · Photoshop 2022 (23.3)+</p>
-          <a class="btn btn-amber" href="https://github.com/yektapour/yekta-site/releases/download/yekta-light-v2.0.0/YektaLight.ccx">Download for Photoshop</a>
-          <a class="guide" href="/tools/yekta-light/assets/docs/YektaLight-Install-Photoshop.pdf">Install guide | Photoshop</a>
-        </div>
-        <div class="card">
-          <h3>Clip Studio | Windows</h3>
-          <p class="req">Windows 10/11, 64 bit</p>
-          <a class="btn btn-amber" href="https://github.com/yektapour/yekta-site/releases/download/yekta-light-v2.0.0/YektaLight-Windows.zip">Download for Windows</a>
-          <a class="guide" href="/tools/yekta-light/assets/docs/YektaLight-Install-ClipStudio-Windows.pdf">Install guide | Clip Studio (Windows)</a>
-        </div>
-        <div class="card">
-          <h3>Clip Studio | Mac (Apple Silicon)</h3>
-          <p class="req">M1 to M4 Macs, macOS 11+</p>
-          <a class="btn btn-amber" href="https://github.com/yektapour/yekta-site/releases/download/yekta-light-v2.0.0/YektaLight-macOS-AppleSilicon.zip">Download for Apple Silicon</a>
-          <a class="guide" href="/tools/yekta-light/assets/docs/YektaLight-Install-ClipStudio-macOS.pdf">Install guide | Clip Studio (macOS)</a>
-        </div>
-        <div class="card">
-          <h3>Clip Studio | Mac (Intel)</h3>
-          <p class="req">Intel Macs, macOS 11+</p>
-          <a class="btn btn-amber" href="https://github.com/yektapour/yekta-site/releases/download/yekta-light-v2.0.0/YektaLight-macOS-Intel.zip">Download for Intel Mac</a>
-          <a class="guide" href="/tools/yekta-light/assets/docs/YektaLight-Install-ClipStudio-macOS.pdf">Install guide | Clip Studio (macOS)</a>
-        </div>
-      </div>
-      <div class="fine">
-        <p><b>Photoshop</b>Double click the .ccx file; Creative Cloud installs it. Then <i>Plugins ▸ Yekta Light</i>.</p>
-        <p><b>Windows</b>Windows may show “Windows protected your PC” for new apps. Click <i>More info ▸ Run anyway</i>.</p>
-        <p><b>Mac</b>The app is not notarized yet. The install guide shows the one time Terminal step.</p>
-      </div>
-      <div class="userguide">
-        <p>Every option explained, step by step.</p>
-        <a class="btn btn-line" href="/tools/yekta-light/assets/docs/YektaLight-User-Guide.pdf">User guide (PDF)</a>
-      </div>
-      <div class="facts">
-        <span>Price <b>Free</b></span>
-        <span>Version <b>2.0</b></span>
-        <span>Photoshop <b>2022 (23.3) or newer</b>, Windows and macOS</span>
-        <span>Clip Studio Paint <b>separate always on top app</b> (Clip Studio does not support third party panels)</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="credits" aria-labelledby="cr">
-    <div class="wrap">
-      <p class="lbl" id="cr">04 | Credits</p>
-      <ul>
-        <li><b>Male head:</b> “Lee Perry-Smith” head scan © Infinite-Realities, licensed CC BY 3.0 (attribution required).</li>
-        <li><b>Female head:</b> “Woman’s Head” by Artur Loewental (plaster, The Collection, Lincoln), scan from Three D Scans (threedscans.com) by Oliver Laric, published without copyright restrictions.</li>
-        <li><b>Skull:</b> by Vladimir Petkovic, Khronos glTF Sample Assets, CC0.</li>
-      </ul>
-    </div>
-  </section>
+  <aside class="panel" id="panel" aria-label="Tools">
+    <div class="pickbox" id="pickbox"></div>
+    <nav class="tabs" id="tabs"></nav>
+    <div class="scroll" id="scroll"></div>
+  </aside>
 </main>
-
-<footer>
-  <div class="wrap">
-    <span><span class="logo" style="display:inline-flex"><i></i><b>YEKTA</b><span>light</span></span></span>
-    <span>Free · Version 2.0 · Made by <a href="/">YEKTA</a> · <a href="/">yektapour.com</a></span>
-  </div>
-</footer>
-
-<script src="/tools/yekta-light/assets/page.js"></script>
+<div class="toast" id="toast"></div>
+<script data-goatcounter="https://yektapour.goatcounter.com/count" async src="/gc.js"></script>
+<script type="module" src="/tools/yekta-light/assets/app.js"></script>
 </body>
 </html>

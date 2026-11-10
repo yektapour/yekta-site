@@ -1,0 +1,6 @@
+Yekta Light (online) by YEKTA, yektapour.com
+
+- Figures: "Woman Base Mesh" and "Man Base Mesh" by Grab3D (grab3d.com), CC0 1.0.
+  Finger bones and finger skinning added by Yekta Light; compressed with gltfpack (meshoptimizer).
+- three.js r160 (MIT, see vendor/THREE-LICENSE.txt), including GLTFLoader, OrbitControls,
+  TransformControls and the meshopt decoder (MIT, Arseny Kapoulkine).

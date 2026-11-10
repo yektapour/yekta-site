@@ -48,7 +48,7 @@ Process name: overthink(paint)ing
 - [An Image, Listened To](https://yektapour.com/interactive/an-image-listened-to/): An interactive work that takes any image and turns it into sound and film, by looking at it the way a person does.
 
 ## Tools
-- [Yekta Light](https://yektapour.com/tools/yekta-light/): The 3D light color picker for painters. Light a real 3D form and pick the exact color the light creates. Free for Photoshop and Clip Studio Paint.
+- [Yekta Light](https://yektapour.com/tools/yekta-light/): The 3D light color picker for painters. Light a posable 3D figure and pick the exact color the light creates. Free, runs in your browser.
 
 ## Articles
 - [Drained Flesh: A Metamorphosis That Goes the Other Way](https://yektapour.com/articles/drained-flesh/): On a painting about how a human being can slowly become something unrecognizable, and nobody can say exactly when it happened.
