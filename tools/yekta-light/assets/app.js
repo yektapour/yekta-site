@@ -16,6 +16,7 @@ const BASE = '/tools/yekta-light/assets/';
 const MODELS = {
   woman: { file: 'models/woman.glb', label: 'Woman', fused: ['middle_r', 'ring_r', 'pinky_r'] },
   man: { file: 'models/man.glb', label: 'Man', fused: [] },
+  skeleton: { file: 'models/skeleton.glb', label: 'Skeleton', fused: [], bone: true },
 };
 
 // ---------------- state, undo, persistence ----------------
@@ -107,10 +108,18 @@ async function loadModel(name) {
   const col = mesh ? new Collider(rig, mesh) : null;
   const restMin = lowest(rig);
   const box = new THREE.Box3().setFromObject(root);
-  cache[name] = { root, rig, mesh, col, restMin, height: box.max.y - box.min.y, texAvg };
+  cache[name] = { root, rig, mesh, col, hasMap: !!(mesh && mesh.material.map), restMin, height: box.max.y - box.min.y, texAvg };
   return cache[name];
 }
+const BONE_MAT = { base: [0.88, 0.84, 0.75], spec: [1, 1, 1], specInt: 0.2, gloss: 0.35, metal: 0, sss: 0.2, sssColor: [1, 0.55, 0.42] };
+const SKIN_MAT = LM.defaultState().mat;
+function matForModel(name) {
+  const isBone = !!MODELS[name].bone, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  if (isBone && !same(S.mat, BONE_MAT)) { S.skinMat = clone(S.mat); S.mat = clone(BONE_MAT); }
+  else if (!isBone && same(S.mat, BONE_MAT)) S.mat = clone(S.skinMat || SKIN_MAT);
+}
 async function showModel(name) {
+  matForModel(name);
   $('loading').classList.remove('done'); $('lbar').style.width = '0';
   const M = await loadModel(name);
   if (cur) scene.remove(cur.root);
@@ -135,7 +144,7 @@ function applyLight() {
   U.uBase.value.setRGB(...m.base); U.uSpec.value.setRGB(...LM.lin3(S.mat.spec || [1, 1, 1]));
   U.uSpecInt.value = m.specInt; U.uExp.value = m.exp; U.uNorm.value = m.norm; U.uMetal.value = LM.clamp01(S.mat.metal);
   U.uEnvK.value = m.env; U.uSss.value = m.sss; U.uSssC.value.setRGB(...m.sssC);
-  U.uTexMode.value = S.surface === 'texture' ? 1 : 0;
+  U.uTexMode.value = S.surface === 'texture' && (!cur || cur.hasMap) ? 1 : 0;
   if (cur) { const t = cur.texAvg, ts = t[0] + t[1] + t[2]; U.uSkinC.value.set(t[0] / ts, t[1] / ts, t[2] / ts); }
   if (cur) U.uTexTint.value.setRGB(...m.base.map((b, i) => Math.min(4, b / Math.max(0.02, cur.texAvg[i]))));
   U.uVMode.value = { off: 0, gray: 1, notan: 2, v3: 3, v5: 4 }[S.valueMode] || 0;
@@ -768,7 +777,7 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
   const rs = h('button', 'chip', 'Reset everything'); ex.append(rs);
   rs.addEventListener('click', () => { const m = S.model; S = LM.defaultState(); S.model = m; applyAll(); commit(); refreshUI(); setView('3/4'); });
   const foot = h('div', 'foot');
-  foot.innerHTML = 'Shortcuts: <span class="kbd">Ctrl Z</span> undo · <span class="kbd">Ctrl Shift Z</span> redo · <span class="kbd">V</span> value mode · <span class="kbd">1–4</span> tabs · <span class="kbd">P</span> pick · <span class="kbd">E</span> rotate · <span class="kbd">W</span> move · <span class="kbd">Z</span> zoom · <span class="kbd">+ −</span> zoom · <span class="kbd">F</span> fit figure · <span class="kbd">.</span> focus bone<br>Figures: Man and Woman base meshes by Grab3D (CC0). Finger rig by Yekta Light. Free tool by <a href="/">YEKTA</a>.';
+  foot.innerHTML = 'Shortcuts: <span class="kbd">Ctrl Z</span> undo · <span class="kbd">Ctrl Shift Z</span> redo · <span class="kbd">V</span> value mode · <span class="kbd">1–4</span> tabs · <span class="kbd">P</span> pick · <span class="kbd">E</span> rotate · <span class="kbd">W</span> move · <span class="kbd">Z</span> zoom · <span class="kbd">+ −</span> zoom · <span class="kbd">F</span> fit figure · <span class="kbd">.</span> focus bone<br>Figures: Man and Woman base meshes by Grab3D (CC0). Skeleton: “Human Skeleton Rigged” by Shachar, model by momentum (BlendSwap, CC-BY). Finger rig by Yekta Light. Free tool by <a href="/">YEKTA</a>.';
   P.append(foot);
 }
 
