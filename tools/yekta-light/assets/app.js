@@ -7,6 +7,7 @@ import { MeshoptDecoder } from './vendor/meshopt_decoder.module.js';
 import * as LM from './light.js';
 import { Rig, POSES, FINGERS, limitsOf, labelOf } from './rig.js';
 import { makeUniforms, patchMaterial } from './shader.js';
+import { Collider } from './collide.js';
 
 const $ = (id) => document.getElementById(id);
 const h = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
@@ -103,9 +104,10 @@ async function loadModel(name) {
     o.material = patchMaterial(m, U);
   });
   const rig = new Rig(root, { fused: def.fused });
+  const col = mesh ? new Collider(rig, mesh) : null;
   const restMin = lowest(rig);
   const box = new THREE.Box3().setFromObject(root);
-  cache[name] = { root, rig, mesh, restMin, height: box.max.y - box.min.y, texAvg };
+  cache[name] = { root, rig, mesh, col, restMin, height: box.max.y - box.min.y, texAvg };
   return cache[name];
 }
 async function showModel(name) {
@@ -210,13 +212,20 @@ gizmo.addEventListener('objectChange', () => {
   if (!cur || !gizmo.object) return;
   const k = selJoint, R = cur.rig;
   if (tool === 'rotate') {
-    R.bake(k, S.pose);
-    if (S.symmetric && /_[lr]$/.test(k)) { if (S.pose.j[k]) S.pose.j[mirrorName(k)] = S.pose.j[k].slice(); else delete S.pose.j[mirrorName(k)]; }
+    const next = clone(S.pose);
+    R.bake(k, next);
+    if (S.symmetric && /_[lr]$/.test(k)) { if (next.j[k]) next.j[mirrorName(k)] = next.j[k].slice(); else delete next.j[mirrorName(k)]; }
+    guarded(() => { S.pose = next; });
   } else if (tool === 'move' && drag0) {
     if (k === 'hips') S.pose.root = drag0.root.map((v, i) => v + proxy.position.getComponent(i) - drag0.proxy.getComponent(i));
     else {
-      if ((S.pose.pins || {})[k]) S.pose.pins[k] = proxy.position.toArray().concat(S.pose.pins[k].slice(3));
-      R.moveTo(k, proxy.position.clone(), S.pose);
+      const target = proxy.position.clone();
+      // slide along the body instead of going into it
+      if (S.collide !== false && cur.col) { const mc = R.moveChain(k), skip = new Set(); const top = R.B(mc.limb ? mc.limb[0] : k); top.traverse((o) => { if (o.isBone) skip.add(o); }); cur.col.pushOut(target, /wrist/.test(k) ? 0.03 * cur.height / 1.75 : /ankle/.test(k) ? 0.04 : 0.012, skip); }
+      const next = clone(S.pose);
+      if ((next.pins || {})[k]) next.pins[k] = target.toArray().concat(next.pins[k].slice(3));
+      R.apply(S.pose); R.moveTo(k, target, next);
+      guarded(() => { S.pose = next; });
     }
   }
   applyPose(); refreshPose();
@@ -241,6 +250,7 @@ function placeHandles() {
   const pa = boneLines.geometry.getAttribute('position');
   if (pa) { cur.rig.links.forEach(([a, b], i) => { a.getWorldPosition(tv); pa.setXYZ(i * 2, tv.x, tv.y, tv.z); b.getWorldPosition(tv); pa.setXYZ(i * 2 + 1, tv.x, tv.y, tv.z); }); pa.needsUpdate = true; }
   boneLines.visible = S.skeleton !== false;
+  placeVolumes();
   handles.visible = rigVisible();
   const b = cur.rig.B(selJoint);
   if (rigVisible() && b) {
@@ -249,6 +259,40 @@ function placeHandles() {
   } else gizmo.detach();
 }
 const mirrorName = (k) => k.replace(/_l$/, '_R').replace(/_r$/, '_l').replace(/_R$/, '_r');
+// ---------------- collision guard ----------------
+// Runs a pose change; if it pushes body parts deeper into each other, it is cut back to the point of contact.
+function lerpPose(a, b, t) {
+  const L = (x, y) => Math.round(((x || 0) + ((y || 0) - (x || 0)) * t) * 10) / 10;
+  const o = clone(b);
+  for (const k of new Set([...Object.keys(a.j), ...Object.keys(b.j)])) { const x = a.j[k] || [0, 0, 0], y = b.j[k] || [0, 0, 0]; o.j[k] = [0, 1, 2].map((i) => L(x[i], y[i])); }
+  for (const s of ['l', 'r']) {
+    const x = a.f[s] || {}, y = b.f[s] || {};
+    for (const k of ['curl', 'spread', 'thumb']) o.f[s][k] = L(x[k], y[k]);
+    o.f[s].fc = {}; for (const k of new Set([...Object.keys(x.fc || {}), ...Object.keys(y.fc || {})])) o.f[s].fc[k] = L((x.fc || {})[k], (y.fc || {})[k]);
+  }
+  return o;
+}
+function guarded(mut) {
+  if (S.collide === false || !cur || !cur.col) { mut(); return; }
+  const before = clone(S.pose);
+  cur.rig.apply(before); const p0 = cur.col.pen();
+  mut();
+  const after = clone(S.pose);
+  cur.rig.apply(after); const p1 = cur.col.pen();
+  if (p1 <= p0 + 1e-4) return;
+  let lo = 0, hi = 1;
+  for (let k = 0; k < 10; k++) { const m = (lo + hi) / 2; cur.rig.apply(lerpPose(before, after, m)); if (cur.col.pen() <= p0 + 1e-4) lo = m; else hi = m; }
+  S.pose = lo > 0 ? lerpPose(before, after, lo) : before;
+}
+const volGroup = new THREE.Group(); scene.add(volGroup);
+const volMat = new THREE.MeshBasicMaterial({ color: 0x5fb3ff, wireframe: true, transparent: true, opacity: 0.35, depthTest: false });
+function placeVolumes() {
+  volGroup.visible = !!S.showVol && !!cur && !!cur.col;
+  if (!volGroup.visible) return;
+  if (volGroup.userData.src !== cur.col) { volGroup.clear(); cur.col.spheres.forEach(() => { const m = new THREE.Mesh(hGeo, volMat); m.renderOrder = 995; volGroup.add(m); }); volGroup.userData.src = cur.col; }
+  cur.col.update();
+  cur.col.spheres.forEach((s, i) => { const m = volGroup.children[i]; m.position.copy(s.w); m.scale.setScalar(s.r); });
+}
 function solvePins() {
   const pins = Object.assign({}, S.pose.pins || {}, tempPins);
   for (const k in pins) { const v = pins[k]; cur.rig.moveTo(k, new THREE.Vector3().fromArray(v), S.pose, v.length > 3 ? new THREE.Quaternion().fromArray(v, 3) : null); }
@@ -319,11 +363,11 @@ function frame() {
   if (handles.visible) for (const m of handles.children) if (m.userData.f) m.scale.setScalar(m.userData.f * Math.min(4.5, camera.position.distanceTo(m.position)) * (30 / camera.fov));
   if (pendingPick || hoverAt) {
     // read colors without helpers (skeleton / gizmo) in the image
-    const hv = handles.visible, gv = gizmo.visible; handles.visible = false; gizmo.visible = false;
+    const hv = handles.visible, gv = gizmo.visible, vv = volGroup.visible; handles.visible = false; gizmo.visible = false; volGroup.visible = false;
     renderer.render(scene, camera);
     if (hoverAt) { const c = readAt(hoverAt.x, hoverAt.y); showLoupe(hoverAt, c); hoverAt = null; }
     if (pendingPick) { const c = readAt(pendingPick.x, pendingPick.y); const p = pendingPick; pendingPick = null; onPicked(c, p); }
-    handles.visible = hv; gizmo.visible = gv;
+    handles.visible = hv; gizmo.visible = gv; volGroup.visible = vv;
   }
   renderer.render(scene, camera);
   needs = false;
@@ -606,6 +650,8 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
   toggle(P, 'Skeleton', () => S.skeleton !== false, (v) => { S.skeleton = v; placeHandles(); dirty(); });
   toggle(P, 'Symmetric', () => S.symmetric, (v) => { S.symmetric = v; });
   toggle(P, 'Feet planted', () => S.planted !== false, (v) => { S.planted = v; });
+  toggle(P, 'Collision', () => S.collide !== false, (v) => { S.collide = v; });
+  toggle(P, 'Show volumes', () => !!S.showVol, (v) => { S.showVol = v; placeHandles(); dirty(); });
 
   H3(P, 'Pose presets');
   chips(P, Object.keys(POSES), null, (name) => { S.pose = clone(POSES[name]); applyPose(); commit(); refreshUI(); });
@@ -641,8 +687,10 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
   const selRow = h('h3'); P.append(selRow);
   const box = h('div'); P.append(box);
   const sl = ['Bend', 'Turn', 'Tilt'].map((nm, i) => slider(box, nm, () => ((S.pose.j[selJoint] || [0, 0, 0])[i] || 0), (v) => {
-    const e = (S.pose.j[selJoint] || [0, 0, 0]).slice(); e[i] = v; S.pose.j[selJoint] = e;
-    if (S.symmetric && /_[lr]$/.test(selJoint)) S.pose.j[mirrorName(selJoint)] = e.slice();
+    guarded(() => {
+      const e = (S.pose.j[selJoint] || [0, 0, 0]).slice(); e[i] = v; S.pose.j[selJoint] = e;
+      if (S.symmetric && /_[lr]$/.test(selJoint)) S.pose.j[mirrorName(selJoint)] = e.slice();
+    });
     applyPose(); markSet();
   }, -180, 180, { step: 1, fmt: (v) => Math.round(v) + '°', def: 0, range: () => limitsOf(selJoint)[i] }));
   const tools = h('div', 'chips'); tools.style.margin = '10px 0 4px'; box.append(tools);
@@ -680,10 +728,10 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
     const col = h('div'); hand.append(col);
     col.append(h('div', 'note', nm));
     const hs = () => S.pose.f[s];
-    const mk = (label, k, min, max) => { const r = slider(col, label, () => hs()[k] || 0, (v) => { hs()[k] = v; if (S.symmetric) S.pose.f[s === 'l' ? 'r' : 'l'][k] = v; applyPose(); }, min, max, { step: 1, def: 0 }); r.row.querySelector('label').style.width = '46px'; };
+    const mk = (label, k, min, max) => { const r = slider(col, label, () => hs()[k] || 0, (v) => { guarded(() => { hs()[k] = v; if (S.symmetric) S.pose.f[s === 'l' ? 'r' : 'l'][k] = v; }); applyPose(); }, min, max, { step: 1, def: 0 }); r.row.querySelector('label').style.width = '46px'; };
     mk('Curl', 'curl', -20, 100); mk('Spread', 'spread', -15, 30); mk('Thumb', 'thumb', -30, 90);
     for (const f of FINGERS.slice(1)) {
-      const r = slider(col, f[0].toUpperCase() + f.slice(1), () => (hs().fc || {})[f] || 0, (v) => { hs().fc = hs().fc || {}; hs().fc[f] = v; if (S.symmetric) { const o = S.pose.f[s === 'l' ? 'r' : 'l']; o.fc = o.fc || {}; o.fc[f] = v; } applyPose(); }, -90, 90, { step: 1, def: 0 });
+      const r = slider(col, f[0].toUpperCase() + f.slice(1), () => (hs().fc || {})[f] || 0, (v) => { guarded(() => { hs().fc = hs().fc || {}; hs().fc[f] = v; if (S.symmetric) { const o = S.pose.f[s === 'l' ? 'r' : 'l']; o.fc = o.fc || {}; o.fc[f] = v; } }); applyPose(); }, -90, 90, { step: 1, def: 0 });
       r.row.querySelector('label').style.width = '46px';
     }
   }
@@ -788,4 +836,4 @@ resize();
 setView('3/4', true);
 frame();
 showModel(S.model).then(() => { applyLight(); refreshFamilies(); setView('3/4', true); }).catch((err) => { $('loading').querySelector('span').textContent = 'Could not load the figure'; console.error(err); });
-window.YektaLight = { moveBone(k, d, planted) { selectJoint(k); setTool('move'); const p0 = cur.rig.pos(k); drag0 = { proxy: p0.clone(), root: S.pose.root ? S.pose.root.slice() : cur.root.position.toArray() }; tempPins = {}; if (k === 'hips' && planted) for (const a of ['ankle_l', 'ankle_r']) tempPins[a] = cur.rig.pinOf(a); proxy.position.copy(p0).add(new THREE.Vector3(...d)); gizmo.dispatchEvent({ type: 'objectChange' }); drag0 = null; tempPins = {}; commit(); return cur.rig.pos(k).distanceTo(proxy.position); }, setTool, dolly, get tool() { return tool; }, get S() { return S; }, applyAll, refreshUI, setView, setTab, selectJoint, get cur() { return cur; }, camera, controls, render: () => { updateLightRig(); renderer.render(scene, camera); } };
+window.YektaLight = { setJoint(k, e) { guarded(() => { S.pose.j[k] = e; }); applyPose(); return S.pose.j[k]; }, get col() { return cur && cur.col; }, moveBone(k, d, planted) { selectJoint(k); setTool('move'); const p0 = cur.rig.pos(k); drag0 = { proxy: p0.clone(), root: S.pose.root ? S.pose.root.slice() : cur.root.position.toArray() }; tempPins = {}; if (k === 'hips' && planted) for (const a of ['ankle_l', 'ankle_r']) tempPins[a] = cur.rig.pinOf(a); proxy.position.copy(p0).add(new THREE.Vector3(...d)); gizmo.dispatchEvent({ type: 'objectChange' }); drag0 = null; tempPins = {}; commit(); return cur.rig.pos(k).distanceTo(proxy.position); }, setTool, dolly, get tool() { return tool; }, get S() { return S; }, applyAll, refreshUI, setView, setTab, selectJoint, get cur() { return cur; }, camera, controls, render: () => { updateLightRig(); renderer.render(scene, camera); } };
