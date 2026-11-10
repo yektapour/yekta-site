@@ -47,11 +47,16 @@ Process name: overthink(paint)ing
 - [Futility](https://yektapour.com/interactive/futility/): An interactive painting: a man pushes a block against a wall, five blows bring it down, and behind it stands the same wall.
 - [An Image, Listened To](https://yektapour.com/interactive/an-image-listened-to/): An interactive work that takes any image and turns it into sound and film, by looking at it the way a person does.
 
+## Tools
+- [Yekta Light](https://yektapour.com/tools/yekta-light/): The 3D light color picker for painters. Light a real 3D form and pick the exact color the light creates. Free for Photoshop and Clip Studio Paint.
+
 ## Articles
 - [Drained Flesh: A Metamorphosis That Goes the Other Way](https://yektapour.com/articles/drained-flesh/): On a painting about how a human being can slowly become something unrecognizable, and nobody can say exactly when it happened.
 - [Globus Sensation: A Painting That Screams When You Touch It](https://yektapour.com/articles/globus-sensation/): An interactive painting: touch the melting man, and a face bursts onto the wall in blood, screams from far away, and slowly fades.
 - [Futility: A Painting That Pushes Back](https://yektapour.com/articles/futility/): An interactive painting: a man pushes a block against a wall, five blows bring it down, and behind it stands the same wall.
 - [An Image, Listened To](https://yektapour.com/articles/an-image-listened-to/): An interactive work that takes any image and turns it into sound and film, by looking at it the way a person does.
+- [The Breakthrough You Already Erased.](https://yektapour.com/articles/the-breakthrough-you-already-erased/): On accidents, expectations, and what we refuse to see. An essay by YEKTA.
+- [Every Painting Is a Self Portrait.](https://yektapour.com/articles/every-painting-is-a-self-portrait/): Even the ones without your face in them. An essay by YEKTA.
 - [Ameretat: She Turned the Ashes into a Home for the Birds](https://yektapour.com/articles/ameretat/): On a painting about rebuilding while the ground is still hot, and what immortality really means.
 - [You Become What You Look At.](https://yektapour.com/articles/you-become-what-you-look-at/): Why an artist's level rises and falls with what they let in. An essay by YEKTA.
 - [Nobody Is Waiting for Your Next Painting.](https://yektapour.com/articles/nobody-is-waiting-for-your-next-painting/): On deadlines, and the work that never gets one. An essay by YEKTA.
