@@ -5,7 +5,7 @@ import { OrbitControls } from './vendor/OrbitControls.js';
 import { TransformControls } from './vendor/TransformControls.js';
 import { MeshoptDecoder } from './vendor/meshopt_decoder.module.js';
 import * as LM from './light.js';
-import { Rig, POSES, LABEL, BONES, FINGERS, limitsOf, clampSem } from './rig.js';
+import { Rig, POSES, FINGERS, limitsOf, labelOf } from './rig.js';
 import { makeUniforms, patchMaterial } from './shader.js';
 
 const $ = (id) => document.getElementById(id);
@@ -148,10 +148,13 @@ function applyLight() {
 }
 function applyPose() {
   if (!cur) return;
-  cur.root.position.y = 0;
-  cur.rig.apply(S.pose);
-  cur.root.position.y = cur.restMin - lowest(cur.rig);
+  const R = cur.rig, P = S.pose;
+  cur.root.position.set(0, 0, 0);
+  R.apply(P);
+  if (P.root) cur.root.position.fromArray(P.root);
+  else cur.root.position.y = cur.restMin - lowest(R);
   cur.root.updateMatrixWorld(true);
+  solvePins();
   placeHandles();
   dirty();
 }
@@ -179,41 +182,108 @@ function setView(name, inst) {
   step();
 }
 
-// ---------------- joint handles + gizmo ----------------
-const handles = new THREE.Group(); scene.add(handles);
-const hGeo = new THREE.SphereGeometry(1, 16, 12);
-const hMat = new THREE.MeshBasicMaterial({ color: 0xebe8e2, depthTest: false, transparent: true, opacity: 0.9 });
+// ---------------- skeleton, tools (pick / rotate / move / zoom), gizmo ----------------
+const handles = new THREE.Group(); handles.renderOrder = 997; scene.add(handles);
+const hGeo = new THREE.SphereGeometry(1, 14, 10);
+const hMat = new THREE.MeshBasicMaterial({ color: 0xebe8e2, depthTest: false, transparent: true, opacity: 0.92 });
 const hMatOn = new THREE.MeshBasicMaterial({ color: 0xf3b44a, depthTest: false });
-let selJoint = 'head', poseTab = false;
+const hMatPin = new THREE.MeshBasicMaterial({ color: 0x5fb3ff, depthTest: false });
+const boneLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf3b44a, depthTest: false, transparent: true, opacity: 0.55 }));
+boneLines.renderOrder = 996; boneLines.frustumCulled = false;
+let selJoint = 'head', poseTab = false, tool = 'pick', tempPins = {};
+const proxy = new THREE.Object3D(); scene.add(proxy);
 const gizmo = new TransformControls(camera, renderer.domElement);
-gizmo.setMode('rotate'); gizmo.setSpace('world'); gizmo.setSize(0.7);
+gizmo.setSpace('world'); gizmo.setSize(0.7);
 scene.add(gizmo);
-gizmo.addEventListener('dragging-changed', (e) => { controls.enabled = !e.value; if (!e.value) { commit(); refreshUI(); } });
+const rigVisible = () => tool === 'rotate' || tool === 'move';
+let drag0 = null;
+gizmo.addEventListener('dragging-changed', (e) => {
+  controls.enabled = !e.value;
+  if (e.value && cur) {
+    drag0 = { proxy: proxy.position.clone(), root: S.pose.root ? S.pose.root.slice() : cur.root.position.toArray() };
+    tempPins = {};
+    if (tool === 'move' && selJoint === 'hips' && S.planted !== false) for (const k of ['ankle_l', 'ankle_r']) if (!(S.pose.pins || {})[k]) tempPins[k] = cur.rig.pinOf(k);
+  }
+  if (!e.value) { tempPins = {}; drag0 = null; placeHandles(); commit(); refreshUI(); }
+});
 gizmo.addEventListener('objectChange', () => {
   if (!cur || !gizmo.object) return;
-  const sem = selJoint;
-  S.pose.j[sem] = clampSem(sem, cur.rig.readSem(sem));
-  if (S.symmetric && /_[lr]$/.test(sem)) S.pose.j[mirrorName(sem)] = S.pose.j[sem].slice();
+  const k = selJoint, R = cur.rig;
+  if (tool === 'rotate') {
+    R.bake(k, S.pose);
+    if (S.symmetric && /_[lr]$/.test(k)) { if (S.pose.j[k]) S.pose.j[mirrorName(k)] = S.pose.j[k].slice(); else delete S.pose.j[mirrorName(k)]; }
+  } else if (tool === 'move' && drag0) {
+    if (k === 'hips') S.pose.root = drag0.root.map((v, i) => v + proxy.position.getComponent(i) - drag0.proxy.getComponent(i));
+    else {
+      if ((S.pose.pins || {})[k]) S.pose.pins[k] = proxy.position.toArray().concat(S.pose.pins[k].slice(3));
+      R.moveTo(k, proxy.position.clone(), S.pose);
+    }
+  }
   applyPose(); refreshPose();
 });
 gizmo.addEventListener('change', () => dirty());
 function buildHandles() {
   handles.clear();
   if (!cur) return;
-  for (const sem of cur.rig.joints) {
-    const m = new THREE.Mesh(hGeo, hMat); m.userData.sem = sem; m.renderOrder = 998;
-    const s = /head|hips|chest|spine|neck/.test(sem) ? 0.022 : 0.017; m.scale.setScalar(s);
+  for (const k of cur.rig.keys) {
+    const m = new THREE.Mesh(hGeo, hMat); m.userData.key = k; m.renderOrder = 998;
+    m.userData.f = /^(thumb|index|middle|ring|pinky)_/.test(k) ? 0.0024 : /toe/.test(k) ? 0.003 : /head|hips|chest|spine|neck/.test(k) ? 0.005 : 0.0042; // constant size on screen
     handles.add(m);
   }
+  boneLines.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cur.rig.links.length * 6), 3));
+  handles.add(boneLines);
 }
+const tv = new THREE.Vector3();
 function placeHandles() {
   if (!cur) return;
-  handles.children.forEach((m) => { m.position.copy(cur.rig.pos(m.userData.sem)); m.material = m.userData.sem === selJoint ? hMatOn : hMat; });
-  handles.visible = poseTab;
-  if (poseTab && S.gizmo !== false && cur.rig.B(selJoint)) gizmo.attach(cur.rig.B(selJoint)); else gizmo.detach();
-  // keep the gizmo from changing the bone outside our limits: it is re-applied from state on every change
+  const pins = S.pose.pins || {};
+  handles.children.forEach((m) => { if (!m.userData.key) return; m.position.copy(cur.rig.pos(m.userData.key)); m.material = m.userData.key === selJoint ? hMatOn : pins[m.userData.key] ? hMatPin : hMat; });
+  const pa = boneLines.geometry.getAttribute('position');
+  if (pa) { cur.rig.links.forEach(([a, b], i) => { a.getWorldPosition(tv); pa.setXYZ(i * 2, tv.x, tv.y, tv.z); b.getWorldPosition(tv); pa.setXYZ(i * 2 + 1, tv.x, tv.y, tv.z); }); pa.needsUpdate = true; }
+  boneLines.visible = S.skeleton !== false;
+  handles.visible = rigVisible();
+  const b = cur.rig.B(selJoint);
+  if (rigVisible() && b) {
+    gizmo.setMode(tool === 'move' ? 'translate' : 'rotate');
+    if (tool === 'move') { if (!gizmo.dragging) proxy.position.copy(cur.rig.pos(selJoint)); gizmo.attach(proxy); } else gizmo.attach(b);
+  } else gizmo.detach();
 }
-const mirrorName = (sem) => sem.replace(/_l$/, '_R').replace(/_r$/, '_l').replace(/_R$/, '_r');
+const mirrorName = (k) => k.replace(/_l$/, '_R').replace(/_r$/, '_l').replace(/_R$/, '_r');
+function solvePins() {
+  const pins = Object.assign({}, S.pose.pins || {}, tempPins);
+  for (const k in pins) { const v = pins[k]; cur.rig.moveTo(k, new THREE.Vector3().fromArray(v), S.pose, v.length > 3 ? new THREE.Quaternion().fromArray(v, 3) : null); }
+}
+function setTool(t) {
+  tool = t;
+  controls.enableRotate = t !== 'zoom';
+  document.querySelectorAll('#tools [data-tool]').forEach((b) => b.classList.toggle('on', b.dataset.tool === t));
+  renderer.domElement.style.cursor = t === 'zoom' ? 'zoom-in' : t === 'pick' ? 'crosshair' : 'default';
+  $('status').textContent = {
+    pick: 'Click the figure to pick a color · drag to orbit · right-drag to pan · scroll to zoom',
+    rotate: 'Click a bone (dot or body part) · drag the rings to rotate · drag empty space to orbit',
+    move: 'Click a bone · drag the arrows to move it: arms and legs follow (IK), hips move the body',
+    zoom: 'Click to zoom in at a point · Alt-click to zoom out · drag up / down to zoom',
+  }[t];
+  placeHandles(); refreshUI(); dirty();
+}
+// camera zoom (toward a point when given)
+function dolly(k, point) {
+  const t = controls.target, p = point || t;
+  const nd = camera.position.distanceTo(t) * k;
+  if (nd < controls.minDistance || nd > controls.maxDistance) return;
+  t.sub(p).multiplyScalar(k).add(p);
+  camera.position.sub(p).multiplyScalar(k).add(p);
+  controls.update(); dirty();
+}
+function frameOn(center, radius) {
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const dist = radius / Math.tan((camera.fov * Math.PI) / 360);
+  const t0 = controls.target.clone(), p0 = camera.position.clone(), to = center.clone().addScaledVector(dir, dist), st = performance.now();
+  const step = () => { const k = Math.min(1, (performance.now() - st) / 380), e = 1 - Math.pow(1 - k, 3); controls.target.lerpVectors(t0, center, e); camera.position.lerpVectors(p0, to, e); controls.update(); dirty(); if (k < 1) requestAnimationFrame(step); };
+  step();
+}
+const fitFigure = () => { if (cur) { const bx = new THREE.Box3().setFromObject(cur.mesh); frameOn(bx.getCenter(new THREE.Vector3()), cur.height * 0.6); } };
+const focusSel = () => { if (cur) frameOn(cur.rig.pos(selJoint), /^(thumb|index|middle|ring|pinky)_|wrist/.test(selJoint) ? 0.12 : /head|neck|toe|ankle/.test(selJoint) ? 0.22 : 0.45); };
 
 // ---------------- render loop + picking ----------------
 let needs = true, pendingPick = null, hoverAt = null;
@@ -246,8 +316,9 @@ function frame() {
   if (controls.update()) needs = true;
   if (!needs && !pendingPick && !hoverAt) return;
   updateLightRig();
+  if (handles.visible) for (const m of handles.children) if (m.userData.f) m.scale.setScalar(m.userData.f * Math.min(4.5, camera.position.distanceTo(m.position)) * (30 / camera.fov));
   if (pendingPick || hoverAt) {
-    // read colors without helpers (handles / gizmo) in the image
+    // read colors without helpers (skeleton / gizmo) in the image
     const hv = handles.visible, gv = gizmo.visible; handles.visible = false; gizmo.visible = false;
     renderer.render(scene, camera);
     if (hoverAt) { const c = readAt(hoverAt.x, hoverAt.y); showLoupe(hoverAt, c); hoverAt = null; }
@@ -258,31 +329,57 @@ function frame() {
   needs = false;
 }
 
-// pointer: click = pick (or select a joint in Pose), drag = orbit
+// pointer
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let down = null;
 const loupe = $('loupe');
-function showLoupe(p, c) {
-  loupe.style.display = 'block'; loupe.style.left = p.x + 'px'; loupe.style.top = p.y + 'px'; loupe.style.background = LM.hex(c);
-}
-renderer.domElement.addEventListener('pointerdown', (e) => { down = { x: e.offsetX, y: e.offsetY, t: performance.now(), b: e.button }; });
-renderer.domElement.addEventListener('pointermove', (e) => {
-  if (e.buttons || gizmo.dragging) { loupe.style.display = 'none'; return; }
-  if (e.pointerType === 'mouse') hoverAt = { x: e.offsetX, y: e.offsetY };
-});
-renderer.domElement.addEventListener('pointerleave', () => { loupe.style.display = 'none'; });
-renderer.domElement.addEventListener('pointerup', (e) => {
-  if (!down || down.b !== 0) return;
-  const moved = Math.hypot(e.offsetX - down.x, e.offsetY - down.y); down = null;
-  if (moved > 4 || gizmo.dragging || gizmo.axis) return;
+function showLoupe(p, c) { loupe.style.display = 'block'; loupe.style.left = p.x + 'px'; loupe.style.top = p.y + 'px'; loupe.style.background = LM.hex(c); }
+function castAt(x, y) {
   const r = renderer.domElement.getBoundingClientRect();
-  ndc.set((e.offsetX / r.width) * 2 - 1, -(e.offsetY / r.height) * 2 + 1);
-  ray.setFromCamera(ndc, camera);
-  if (poseTab && handles.children.length) {
-    const hit = ray.intersectObjects(handles.children)[0];
-    if (hit) { selectJoint(hit.object.userData.sem); return; }
+  ndc.set((x / r.width) * 2 - 1, -(y / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
+  return cur ? ray.intersectObject(cur.mesh)[0] || null : null;
+}
+// nearest bone dot on screen (small finger dots are hard to hit with a ray)
+function dotAt(x, y) {
+  if (!cur || !handles.visible) return null;
+  const r = renderer.domElement.getBoundingClientRect(); let best = null, bd = 14;
+  for (const m of handles.children) {
+    if (!m.userData.key) continue;
+    tv.copy(m.position).project(camera);
+    const d = Math.hypot((tv.x * 0.5 + 0.5) * r.width - x, (-tv.y * 0.5 + 0.5) * r.height - y);
+    if (d < bd) { bd = d; best = m.userData.key; }
   }
-  pendingPick = { x: e.offsetX, y: e.offsetY, hit: cur ? ray.intersectObject(cur.mesh)[0] : null };
+  return best;
+}
+// the bone that most influences the clicked point of the skin
+function boneAtHit(hit) {
+  const g = cur.mesh.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, acc = new Map();
+  for (const v of [hit.face.a, hit.face.b, hit.face.c]) for (let c = 0; c < 4; c++) { const w = sw.getComponent(v, c); if (w > 0) { const j = si.getComponent(v, c); acc.set(j, (acc.get(j) || 0) + w); } }
+  let bj = -1, bw = 0; acc.forEach((w, j) => { if (w > bw) { bw = w; bj = j; } });
+  return bj >= 0 ? cur.rig.keyFor(cur.mesh.skeleton.bones[bj]) : null;
+}
+const cvs = renderer.domElement;
+cvs.addEventListener('pointerdown', (e) => {
+  down = { x: e.offsetX, y: e.offsetY, b: e.button, alt: e.altKey, zy: e.offsetY };
+  if (tool === 'zoom' && e.button === 0) cvs.setPointerCapture(e.pointerId);
+});
+cvs.addEventListener('pointermove', (e) => {
+  if (tool === 'zoom' && down && down.b === 0 && e.buttons & 1) { const dy = e.offsetY - down.zy; down.zy = e.offsetY; if (dy) dolly(Math.exp(dy * 0.006)); return; }
+  if (e.buttons || gizmo.dragging) { loupe.style.display = 'none'; return; }
+  if (e.pointerType === 'mouse' && tool === 'pick') hoverAt = { x: e.offsetX, y: e.offsetY }; else loupe.style.display = 'none';
+});
+cvs.addEventListener('pointerleave', () => { loupe.style.display = 'none'; });
+cvs.addEventListener('pointerup', (e) => {
+  if (!down || down.b !== 0) return;
+  const moved = Math.hypot(e.offsetX - down.x, e.offsetY - down.y), alt = down.alt || e.altKey; down = null;
+  if (moved > 4 || gizmo.dragging || gizmo.axis) return;
+  if (tool === 'zoom') { const hit = castAt(e.offsetX, e.offsetY); dolly(alt ? 1.6 : 0.6, hit ? hit.point : null); return; }
+  if (rigVisible()) {
+    const k = dotAt(e.offsetX, e.offsetY) || (() => { const hit = castAt(e.offsetX, e.offsetY); return hit ? boneAtHit(hit) : null; })();
+    if (k) selectJoint(k);
+    return;
+  }
+  pendingPick = { x: e.offsetX, y: e.offsetY, hit: castAt(e.offsetX, e.offsetY) };
   dirty();
 });
 
@@ -393,8 +490,8 @@ TABS.forEach((t) => {
 function setTab(t) {
   tab = t; [...tabs.children].forEach((b) => b.classList.toggle('on', b.textContent === t));
   Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === t));
-  poseTab = t === 'Pose'; placeHandles(); dirty();
-  $('status').textContent = poseTab ? 'Click a joint dot (or the body map) · drag the rings to rotate · click the figure to pick' : 'Click the figure to pick a color · drag to orbit · right-drag to pan · scroll to zoom';
+  poseTab = t === 'Pose';
+  if (poseTab && tool === 'pick') setTool('rotate'); else { placeHandles(); dirty(); }
 }
 const upd = (f) => (v) => { f(v); applyLight(); refreshFamilies(); };
 
@@ -501,47 +598,78 @@ const upd = (f) => (v) => { f(v); applyLight(); refreshFamilies(); };
 
 // ---------------- Pose pane ----------------
 let refreshPose = () => {};
-function selectJoint(sem) { selJoint = sem; placeHandles(); refreshPose(); dirty(); }
+function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); placeHandles(); refreshPose(); dirty(); }
 {
   const P = panes.Pose;
+  H3(P, 'Tool');
+  seg(P, [{ label: 'Rotate  E', value: 'rotate', title: 'Rotate the selected bone (rings)' }, { label: 'Move  W', value: 'move', title: 'Move the selected bone: limbs follow with IK, hips move the body' }, { label: 'Pick color  P', value: 'pick' }], (v) => tool === v, (v) => setTool(v));
+  toggle(P, 'Skeleton', () => S.skeleton !== false, (v) => { S.skeleton = v; placeHandles(); dirty(); });
+  toggle(P, 'Symmetric', () => S.symmetric, (v) => { S.symmetric = v; });
+  toggle(P, 'Feet planted', () => S.planted !== false, (v) => { S.planted = v; });
+
   H3(P, 'Pose presets');
   chips(P, Object.keys(POSES), null, (name) => { S.pose = clone(POSES[name]); applyPose(); commit(); refreshUI(); });
 
-  H3(P, 'Joints', (() => { const s = h('span'); s.append('click a dot'); return s; })());
-  const body = h('div', 'body'); P.append(body);
-  // front view of the figure: the character's left side is on the viewer's right
-  const POS = { head: [50, 11], neck: [50, 21], chest: [50, 31], spine: [50, 41], hips: [50, 51], shoulder_l: [57, 24], arm_l: [64, 26], elbow_l: [70, 39], wrist_l: [75, 51], shoulder_r: [43, 24], arm_r: [36, 26], elbow_r: [30, 39], wrist_r: [25, 51], thigh_l: [55, 54], knee_l: [56, 72], ankle_l: [57, 89], thigh_r: [45, 54], knee_r: [44, 72], ankle_r: [43, 89] };
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('preserveAspectRatio', 'none');
-  const LINES = [['head', 'neck'], ['neck', 'chest'], ['chest', 'spine'], ['spine', 'hips'], ['neck', 'shoulder_l'], ['shoulder_l', 'arm_l'], ['arm_l', 'elbow_l'], ['elbow_l', 'wrist_l'], ['neck', 'shoulder_r'], ['shoulder_r', 'arm_r'], ['arm_r', 'elbow_r'], ['elbow_r', 'wrist_r'], ['hips', 'thigh_l'], ['thigh_l', 'knee_l'], ['knee_l', 'ankle_l'], ['hips', 'thigh_r'], ['thigh_r', 'knee_r'], ['knee_r', 'ankle_r']];
-  LINES.forEach(([a, b]) => { const l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); l.setAttribute('x1', POS[a][0]); l.setAttribute('y1', POS[a][1]); l.setAttribute('x2', POS[b][0]); l.setAttribute('y2', POS[b][1]); l.setAttribute('stroke', '#3a3a40'); l.setAttribute('stroke-width', '0.8'); l.setAttribute('vector-effect', 'non-scaling-stroke'); l.style.strokeWidth = '2px'; svg.append(l); });
-  body.append(svg);
+  H3(P, 'Skeleton', (() => { const s = h('span'); s.append('click a dot'); return s; })());
+  const NS = 'http://www.w3.org/2000/svg';
+  const allDots = [];
+  function map(parent, cls, POS, LINES, capTxt) {
+    const box = h('div', cls); parent.append(box);
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('preserveAspectRatio', 'none');
+    LINES.forEach(([a, b]) => { const l = document.createElementNS(NS, 'line'); l.setAttribute('x1', POS[a][0]); l.setAttribute('y1', POS[a][1]); l.setAttribute('x2', POS[b][0]); l.setAttribute('y2', POS[b][1]); l.setAttribute('stroke', '#3a3a40'); l.setAttribute('vector-effect', 'non-scaling-stroke'); l.style.strokeWidth = '2px'; svg.append(l); });
+    box.append(svg);
+    if (capTxt) box.append(h('div', 'cap2', capTxt));
+    Object.keys(POS).forEach((k) => { if (POS[k][2]) return; const d = h('button', 'jd'); d.style.left = POS[k][0] + '%'; d.style.top = POS[k][1] + '%'; d.title = labelOf(k); d.setAttribute('aria-label', labelOf(k)); d.addEventListener('click', () => selectJoint(k)); box.append(d); allDots.push([k, d]); });
+    return box;
+  }
+  // front view: the figure's left side is on the viewer's right
+  const BPOS = { head: [50, 10], neck: [50, 20], chest: [50, 30], spine: [50, 40], hips: [50, 50], shoulder_l: [57, 23], arm_l: [64, 25], elbow_l: [70, 38], wrist_l: [75, 50], shoulder_r: [43, 23], arm_r: [36, 25], elbow_r: [30, 38], wrist_r: [25, 50], thigh_l: [55, 53], knee_l: [56, 71], ankle_l: [57, 87], toe_l: [60, 95], thigh_r: [45, 53], knee_r: [44, 71], ankle_r: [43, 87], toe_r: [40, 95] };
+  const BL = [['head', 'neck'], ['neck', 'chest'], ['chest', 'spine'], ['spine', 'hips'], ['neck', 'shoulder_l'], ['shoulder_l', 'arm_l'], ['arm_l', 'elbow_l'], ['elbow_l', 'wrist_l'], ['neck', 'shoulder_r'], ['shoulder_r', 'arm_r'], ['arm_r', 'elbow_r'], ['elbow_r', 'wrist_r'], ['hips', 'thigh_l'], ['thigh_l', 'knee_l'], ['knee_l', 'ankle_l'], ['ankle_l', 'toe_l'], ['hips', 'thigh_r'], ['thigh_r', 'knee_r'], ['knee_r', 'ankle_r'], ['ankle_r', 'toe_r']];
+  const body = map(P, 'body', BPOS, BL);
   const cap = h('div', 'cap'); body.append(cap);
   body.append(h('div', 'hint', 'Figure faces you: its left side is on your right'));
-  const dots = Object.keys(POS).map((sem) => { const d = h('button', 'jd'); d.style.left = POS[sem][0] + '%'; d.style.top = POS[sem][1] + '%'; d.title = LABEL[sem]; d.setAttribute('aria-label', LABEL[sem]); d.addEventListener('click', () => selectJoint(sem)); body.append(d); return [sem, d]; });
+  // hands: thumb toward the body's center
+  const hands = h('div', 'hand'); hands.style.marginBottom = '8px'; P.append(hands);
+  for (const s of ['r', 'l']) {
+    const fx = (x) => (s === 'r' ? 100 - x : x);
+    const F = { thumb: [[30, 72], [20, 58], [13, 46]], index: [[38, 44], [36, 29], [35, 17]], middle: [[50, 41], [50, 25], [50, 12]], ring: [[61, 44], [63, 30], [64, 19]], pinky: [[71, 51], [74, 40], [76, 31]] };
+    const POS = { ['wrist_' + s]: [50, 88] }, L = [];
+    for (const f of FINGERS) { F[f].forEach(([x, y], i) => { POS[`${f}_0${i + 1}_${s}`] = [fx(x), y]; }); L.push(['wrist_' + s, `${f}_01_${s}`], [`${f}_01_${s}`, `${f}_02_${s}`], [`${f}_02_${s}`, `${f}_03_${s}`]); }
+    map(hands, 'body handmap', POS, L, s === 'r' ? 'R hand' : 'L hand');
+  }
 
+  const selRow = h('h3'); P.append(selRow);
   const box = h('div'); P.append(box);
   const sl = ['Bend', 'Turn', 'Tilt'].map((nm, i) => slider(box, nm, () => ((S.pose.j[selJoint] || [0, 0, 0])[i] || 0), (v) => {
     const e = (S.pose.j[selJoint] || [0, 0, 0]).slice(); e[i] = v; S.pose.j[selJoint] = e;
     if (S.symmetric && /_[lr]$/.test(selJoint)) S.pose.j[mirrorName(selJoint)] = e.slice();
-    applyPose(); dots.forEach(([s, d]) => d.classList.toggle('set', !!(S.pose.j[s] && S.pose.j[s].some((x) => x))));
+    applyPose(); markSet();
   }, -180, 180, { step: 1, fmt: (v) => Math.round(v) + '°', def: 0, range: () => limitsOf(selJoint)[i] }));
   const tools = h('div', 'chips'); tools.style.margin = '10px 0 4px'; box.append(tools);
-  const tb = (txt, title, fn) => { const b = h('button', 'chip', txt); b.title = title; b.addEventListener('click', () => { fn(); applyPose(); commit(); refreshUI(); }); tools.append(b); return b; };
-  tb('Reset joint', 'Back to the neutral angle', () => { delete S.pose.j[selJoint]; });
+  const tb = (txt, title, fn, noApply) => { const b = h('button', 'chip', txt); b.title = title; b.addEventListener('click', () => { fn(); if (!noApply) { applyPose(); commit(); } refreshUI(); }); tools.append(b); return b; };
+  const pinB = tb('Pin', 'Lock this hand / foot in place while you pose the rest', () => {
+    S.pose.pins = S.pose.pins || {};
+    if (S.pose.pins[selJoint]) delete S.pose.pins[selJoint]; else S.pose.pins[selJoint] = cur.rig.pinOf(selJoint);
+  });
+  tb('Reset bone', 'Back to the neutral angle', () => { delete S.pose.j[selJoint]; if (selJoint === 'hips') delete S.pose.root; });
+  tb('Focus', 'Zoom the camera to this bone', () => focusSel(), true);
   tb('Mirror L → R', 'Copy the left side to the right side', () => mirror('l', 'r'));
   tb('Mirror R → L', 'Copy the right side to the left side', () => mirror('r', 'l'));
-  tb('Reset pose', 'Neutral A-pose', () => { S.pose = clone(POSES['A-pose']); });
-  toggle(box, 'Symmetric', () => S.symmetric, (v) => { S.symmetric = v; });
-  toggle(box, 'Rotate rings', () => S.gizmo !== false, (v) => { S.gizmo = v; placeHandles(); dirty(); });
+  tb('Reset pose', 'Neutral A-pose, no pins, body back on the ground', () => { S.pose = clone(POSES['A-pose']); });
   function mirror(a, b) {
     for (const k of Object.keys(S.pose.j)) if (k.endsWith('_' + b)) delete S.pose.j[k];
     for (const [k, v] of Object.entries(S.pose.j)) if (k.endsWith('_' + a)) S.pose.j[k.slice(0, -1) + b] = v.slice();
     S.pose.f[b] = clone(S.pose.f[a]);
   }
+  const markSet = () => allDots.forEach(([s, d]) => { d.classList.toggle('on', s === selJoint); d.classList.toggle('set', !!(S.pose.j[s] && S.pose.j[s].some((x) => x))); d.classList.toggle('pin', !!(S.pose.pins || {})[s]); });
   refreshPose = () => {
     const lim = limitsOf(selJoint);
-    cap.textContent = LABEL[selJoint];
-    dots.forEach(([s, d]) => { d.classList.toggle('on', s === selJoint); d.classList.toggle('set', !!(S.pose.j[s] && S.pose.j[s].some((x) => x))); });
+    cap.textContent = labelOf(selJoint);
+    selRow.textContent = 'Selected: ' + labelOf(selJoint);
+    pinB.style.display = /^(wrist|ankle)_/.test(selJoint) ? '' : 'none';
+    pinB.classList.toggle('on', !!(S.pose.pins || {})[selJoint]);
+    pinB.textContent = (S.pose.pins || {})[selJoint] ? 'Pinned' : 'Pin';
+    markSet();
     sl.forEach((s, i) => { s.row.title = `${['Bend', 'Turn', 'Tilt'][i]}: ${lim[i][0]}° to ${lim[i][1]}°`; s.draw(); });
   };
   onRefresh(refreshPose);
@@ -559,7 +687,7 @@ function selectJoint(sem) { selJoint = sem; placeHandles(); refreshPose(); dirty
       r.row.querySelector('label').style.width = '46px';
     }
   }
-  P.append(h('div', 'note', 'Finger sliders add to the hand curl. Values are mirrored, so the same numbers on both sides give a symmetric pose. Shift-drag a slider for fine control, double-click to reset.'));
+  P.append(h('div', 'note', 'Hand sliders curl every finger at once; each finger bone can also be posed on its own from the hand maps or the viewport. Values are mirrored, so the same numbers on both sides give a symmetric pose. Shift-drag a slider for fine control, double-click to reset.'));
 }
 
 // ---------------- View pane ----------------
@@ -585,15 +713,43 @@ function selectJoint(sem) { selJoint = sem; placeHandles(); refreshPose(); dirty
   const png = h('button', 'chip', 'Save image (PNG)'); ex.append(png);
   png.addEventListener('click', () => {
     handles.visible = false; gizmo.visible = false; updateLightRig(); renderer.render(scene, camera);
-    renderer.domElement.toBlob((b) => { const a = h('a'); a.href = URL.createObjectURL(b); a.download = 'yekta-light.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); handles.visible = poseTab; gizmo.visible = true; dirty(); });
+    renderer.domElement.toBlob((b) => { const a = h('a'); a.href = URL.createObjectURL(b); a.download = 'yekta-light.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); handles.visible = rigVisible(); gizmo.visible = true; dirty(); });
   });
   const pal = h('button', 'chip', 'Copy palette'); ex.append(pal);
   pal.addEventListener('click', () => { const t = LM.families(S).map((f) => `${f.label}: ${LM.hex(LM.finish(f.color.map(LM.toLin), S)).toUpperCase()}`).join('\n'); navigator.clipboard.writeText(t).then(() => toast('Palette copied'), () => toast('Copy not allowed here')); });
   const rs = h('button', 'chip', 'Reset everything'); ex.append(rs);
   rs.addEventListener('click', () => { const m = S.model; S = LM.defaultState(); S.model = m; applyAll(); commit(); refreshUI(); setView('3/4'); });
   const foot = h('div', 'foot');
-  foot.innerHTML = 'Shortcuts: <span class="kbd">Ctrl Z</span> undo · <span class="kbd">Ctrl Shift Z</span> redo · <span class="kbd">V</span> value mode · <span class="kbd">1–4</span> tabs · <span class="kbd">F</span> frame figure<br>Figures: Man and Woman base meshes by Grab3D (CC0). Finger rig by Yekta Light. Free tool by <a href="/">YEKTA</a>.';
+  foot.innerHTML = 'Shortcuts: <span class="kbd">Ctrl Z</span> undo · <span class="kbd">Ctrl Shift Z</span> redo · <span class="kbd">V</span> value mode · <span class="kbd">1–4</span> tabs · <span class="kbd">P</span> pick · <span class="kbd">E</span> rotate · <span class="kbd">W</span> move · <span class="kbd">Z</span> zoom · <span class="kbd">+ −</span> zoom · <span class="kbd">F</span> fit figure · <span class="kbd">.</span> focus bone<br>Figures: Man and Woman base meshes by Grab3D (CC0). Finger rig by Yekta Light. Free tool by <a href="/">YEKTA</a>.';
   P.append(foot);
+}
+
+// ---------------- viewport tool bar ----------------
+{
+  const IC = {
+    pick: '<path d="M14.5 4.5l5 5M17 2.5l4.5 4.5-3 3-4.5-4.5zM14.6 8.4L5 18v1h1l9.6-9.6"/>',
+    rotate: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
+    move: '<path d="M12 3v18M3 12h18"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
+    zoom: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
+    fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', focus: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+  };
+  const bar = h('div', 'toolbar'); bar.id = 'tools'; stage.append(bar);
+  const mk = (id, title, fn, isTool) => {
+    const b = h('button'); b.title = title; b.setAttribute('aria-label', title);
+    b.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${IC[id]}</svg>`;
+    if (isTool) b.dataset.tool = id;
+    b.addEventListener('click', fn); bar.append(b); return b;
+  };
+  mk('pick', 'Pick color (P)', () => setTool('pick'), true);
+  mk('rotate', 'Rotate bone (E)', () => setTool('rotate'), true);
+  mk('move', 'Move bone (W)', () => setTool('move'), true);
+  mk('zoom', 'Zoom tool (Z): click to zoom in, Alt-click to zoom out, drag up / down', () => setTool('zoom'), true);
+  bar.append(h('i'));
+  mk('plus', 'Zoom in (+)', () => dolly(0.8));
+  mk('minus', 'Zoom out (−)', () => dolly(1.25));
+  mk('fit', 'Fit the figure (F)', () => fitFigure());
+  mk('focus', 'Focus on the selected bone (.)', () => focusSel());
 }
 
 // ---------------- viewport overlays ----------------
@@ -614,15 +770,22 @@ addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (k === 'v') { const m = ['off', 'gray', 'notan', 'v3', 'v5']; S.valueMode = m[(m.indexOf(S.valueMode) + 1) % m.length]; applyLight(); refreshFamilies(); refreshUI(); commit(); }
   else if (k >= '1' && k <= '4') setTab(TABS[+k - 1]);
-  else if (k === 'f') setView('3/4');
-  else if (k === 'escape' && poseTab) { gizmo.detach(); dirty(); }
+  else if (k === 'f') fitFigure();
+  else if (k === '.') focusSel();
+  else if (k === 'e') setTool('rotate');
+  else if (k === 'w') setTool('move');
+  else if (k === 'z') setTool('zoom');
+  else if (k === 'p' || k === 'i') setTool('pick');
+  else if (k === '=' || k === '+') dolly(0.8);
+  else if (k === '-' || k === '_') dolly(1.25);
+  else if (k === 'escape') setTool('pick');
 });
 
 // ---------------- start ----------------
-setTab('Light');
+setTab('Light'); setTool('pick');
 applyLight(); applyLens();
 resize();
 setView('3/4', true);
 frame();
 showModel(S.model).then(() => { applyLight(); refreshFamilies(); setView('3/4', true); }).catch((err) => { $('loading').querySelector('span').textContent = 'Could not load the figure'; console.error(err); });
-window.YektaLight = { get S() { return S; }, applyAll, refreshUI, setView, setTab, selectJoint, get cur() { return cur; }, camera, controls, render: () => { updateLightRig(); renderer.render(scene, camera); } };
+window.YektaLight = { moveBone(k, d, planted) { selectJoint(k); setTool('move'); const p0 = cur.rig.pos(k); drag0 = { proxy: p0.clone(), root: S.pose.root ? S.pose.root.slice() : cur.root.position.toArray() }; tempPins = {}; if (k === 'hips' && planted) for (const a of ['ankle_l', 'ankle_r']) tempPins[a] = cur.rig.pinOf(a); proxy.position.copy(p0).add(new THREE.Vector3(...d)); gizmo.dispatchEvent({ type: 'objectChange' }); drag0 = null; tempPins = {}; commit(); return cur.rig.pos(k).distanceTo(proxy.position); }, setTool, dolly, get tool() { return tool; }, get S() { return S; }, applyAll, refreshUI, setView, setTab, selectJoint, get cur() { return cur; }, camera, controls, render: () => { updateLightRig(); renderer.render(scene, camera); } };
