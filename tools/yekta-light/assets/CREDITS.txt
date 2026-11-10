@@ -4,3 +4,5 @@ Yekta Light (online) by YEKTA, yektapour.com
   Finger bones and finger skinning added by Yekta Light; compressed with gltfpack (meshoptimizer).
 - three.js r160 (MIT, see vendor/THREE-LICENSE.txt), including GLTFLoader, OrbitControls,
   TransformControls and the meshopt decoder (MIT, Arseny Kapoulkine).
+- Skeleton: "Human Skeleton Rigged" by Shachar (rig), model by momentum, BlendSwap, CC-BY 3.0.
+  Converted to glTF, mirrored and re-mapped to Yekta Light's bone names; compressed with gltfpack.
