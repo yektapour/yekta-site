@@ -21,7 +21,7 @@
   let userPresets = store.get(PKEY, []);
 
   // ---------- undo / redo (snapshots of the look, not UI state) ----------
-  const LOOK = ['model', 'lens', 'rot', 'light', 'light2', 'ambient', 'bounce', 'rim', 'matA', 'matB', 'compare', 'shadows', 'planes', 'ground', 'groundColor', 'grid', 'gridN', 'pick', 'shadowTint', 'envCustom', 'envColor', 'backdrop', 'backdropColor', 'pins'];
+  const LOOK = ['model', 'lens', 'rot', 'pose', 'light', 'light2', 'ambient', 'bounce', 'rim', 'matA', 'matB', 'compare', 'shadows', 'planes', 'ground', 'groundColor', 'grid', 'gridN', 'pick', 'shadowTint', 'envCustom', 'envColor', 'backdrop', 'backdropColor', 'pins'];
   const snap = () => { const o = {}; LOOK.forEach((k) => { o[k] = clone(S[k]); }); return o; };
   let undoStack = [JSON.stringify(snap())], redoStack = [];
   let saveT = null;
@@ -179,6 +179,8 @@
     headF: 'Female head — "Woman\'s Head", Artur Loewental, Three D Scans (no copyright restrictions)',
     skull: 'Skull — Vladimir Petkovic, Khronos glTF samples (CC0)', egg: 'Egg — basic head mass', cube: 'Cube', cylinder: 'Cylinder',
     cone: 'Cone', torus: 'Torus', drape: 'Drapery — cloth folds', blob: 'Organic form',
+    bodyF: 'Female body — posable (Grab3D, CC0)', bodyM: 'Male body — posable (Grab3D, CC0)',
+    heroF: 'Female mannequin — posable (Quaternius, CC0)', heroM: 'Male mannequin — posable (Quaternius, CC0)',
   };
   const modelStrip = el('div', 'models', app);
   const modelEls = R.models.map((m) => {
@@ -195,6 +197,38 @@
     return [d, m];
   });
   refreshers.push(() => modelEls.forEach(([d, m]) => setCls(d, 'on', S.model === m)));
+
+  // pose (rigged bodies only): presets, per-joint Bend / Turn / Tilt, hands
+  const poseBox = el('div', 'posebox', app);
+  const ph = el('div', 'famhead', poseBox);
+  el('span', 'fht', ph, 'POSE'); el('div', 'grow', ph);
+  const poseChanged = (draft) => { requestRender(draft); if (!draft) saveSoon(); };
+  btn(ph, 'Mirror L→R', 'Copy the left side of the pose to the right side', () => {
+    const j = S.pose.j; Object.keys(j).forEach((k) => { if (/_l$/.test(k)) j[k.replace(/_l$/, '_r')] = j[k].slice(); });
+    S.pose.f.r = clone(S.pose.f.l); refreshAll(); poseChanged();
+  }, 'small');
+  btn(ph, 'Reset', 'Back to the A-pose', () => { S.pose = clone(R.poses['A-pose']); refreshAll(); poseChanged(); }, 'small');
+  const prow = el('div', 'setups', poseBox);
+  Object.keys(R.poses).forEach((k) => btn(prow, k, k + ' pose', () => { S.pose = clone(R.poses[k]); refreshAll(); poseChanged(); toast(k); }, 'small'));
+  const JL = { head: 'Head', neck: 'Neck', chest: 'Chest', spine: 'Spine', hips: 'Hips', arm_l: 'L arm', elbow_l: 'L elbow', wrist_l: 'L wrist', arm_r: 'R arm', elbow_r: 'R elbow', wrist_r: 'R wrist', thigh_l: 'L thigh', knee_l: 'L knee', ankle_l: 'L ankle', thigh_r: 'R thigh', knee_r: 'R knee', ankle_r: 'R ankle' };
+  const jrow = el('div', 'chips jchips', poseBox);
+  const jEls = R.poseJoints.map((k) => { const c = btn(jrow, JL[k] || k, 'Edit ' + (JL[k] || k), () => { S.poseJoint = k; refreshAll(); saveSoon(); }, 'small'); return [c, k]; });
+  refreshers.push(() => jEls.forEach(([c, k]) => { setCls(c, 'on', S.poseJoint === k); setCls(c, 'posed', !!(S.pose.j[k] && S.pose.j[k].some((x) => x))); }));
+  const pc = el('div', 'cols', poseBox), pc1 = el('div', 'col', pc), pc2 = el('div', 'col', pc);
+  const jv = (i) => (S.pose.j[S.poseJoint] || [0, 0, 0])[i] || 0;
+  const setJ = (i, v) => { const a = (S.pose.j[S.poseJoint] || [0, 0, 0]).slice(); a[i] = v; S.pose.j[S.poseJoint] = a; };
+  fslider(pc1, 'Bend', -150, 150, 1, () => jv(0), (v) => setJ(0, v), (v) => Math.round(v) + '°', 0, poseChanged);
+  fslider(pc1, 'Turn', -90, 90, 1, () => jv(1), (v) => setJ(1, v), (v) => Math.round(v) + '°', 0, poseChanged);
+  fslider(pc1, 'Tilt', -150, 150, 1, () => jv(2), (v) => setJ(2, v), (v) => Math.round(v) + '°', 0, poseChanged);
+  el('div', 'colt', pc2, 'Hands  L | R');
+  const hc = el('div', 'cols', pc2), hl = el('div', 'col', hc), hr = el('div', 'col', hc);
+  for (const [col, sd] of [[hl, 'l'], [hr, 'r']]) {
+    fslider(col, 'Curl', 0, 100, 1, () => S.pose.f[sd].curl || 0, (v) => { S.pose.f[sd].curl = v; }, (v) => Math.round(v) + '', 0, poseChanged);
+    fslider(col, 'Spread', -10, 35, 1, () => S.pose.f[sd].spread || 0, (v) => { S.pose.f[sd].spread = v; }, (v) => Math.round(v) + '', 0, poseChanged);
+    fslider(col, 'Thumb', 0, 90, 1, () => S.pose.f[sd].thumb || 0, (v) => { S.pose.f[sd].thumb = v; }, (v) => Math.round(v) + '', 0, poseChanged);
+  }
+  el('div', 'note', poseBox, 'Pick a joint, then Bend (natural flexion), Turn and Tilt. Double-click a slider to reset it.');
+  refreshers.push(() => { poseBox.style.display = R.isRigged(S.model) ? 'block' : 'none'; });
 
   // camera row
   const camRow = el('div', 'toolbar small', app);
@@ -392,6 +426,22 @@
     const ap = (e, rc) => { let v = min + clamp((e.clientX - rc.left) / rc.width, 0, 1) * (max - min); setV(Math.round(v / step) * step); };
     onDrag(tr, { start: ap, move: ap, end: () => { requestRender(); saveSoon(); refreshAll(); if (/^(light|ambient)\./.test(path)) syncEditorIf(['light', 'ambient']); } });
     tr.addEventListener('dblclick', () => { setV(defP(path)); refreshAll(); requestRender(); saveSoon(); });
+    refreshers.push(r);
+  }
+  function fslider(parent, label, min, max, step, get, set, fmt, def, changed) {
+    const row = el('div', 'ps', parent), top = el('div', 'pstop', row);
+    el('div', 'pl', top, label);
+    const val = el('div', 'pv', top);
+    const tr = el('div', 'pt', row), fillEl = el('div', 'pf', tr), th = el('div', 'pth', tr);
+    tr.title = 'Double-click to reset';
+    const r = () => {
+      const v = get(), p = ((v - min) / (max - min)) * 100, z = ((0 - min) / (max - min)) * 100;
+      if (min < 0) { fillEl.style.left = Math.min(p, z) + '%'; fillEl.style.width = Math.abs(p - z) + '%'; } else { fillEl.style.left = '0%'; fillEl.style.width = p + '%'; }
+      th.style.left = p + '%'; val.textContent = fmt ? fmt(v) : String(v);
+    };
+    const ap = (e, rc) => { const v = min + clamp((e.clientX - rc.left) / rc.width, 0, 1) * (max - min); set(Math.round(v / step) * step); r(); changed(true); };
+    onDrag(tr, { start: ap, move: ap, end: () => { changed(false); refreshAll(); } });
+    tr.addEventListener('dblclick', () => { set(def); refreshAll(); changed(false); });
     refreshers.push(r);
   }
   function syncEditorIf(ids) { if (ids.indexOf(S.target) >= 0) syncEditor(); }

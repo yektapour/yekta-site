@@ -64,8 +64,12 @@
     head: { s: 1.45, dy: -0.24 },
     headF: { s: 1.25, dy: -0.18, rx: Math.PI },
     skull: { s: 1.25, dy: 0.02 },
+    // rigged full bodies (posable): framed to 2 units tall, feet on the ground
+    bodyF: { skinned: true, gy: -1.0 }, bodyM: { skinned: true, gy: -1.0 },
+    heroF: { skinned: true, gy: -1.0 }, heroM: { skinned: true, gy: -1.0 },
   };
-  const NONCONVEX = { torus: 1, blob: 1, drape: 1, head: 1, headF: 1, skull: 1 };
+  const hasMesh = (m) => !!MESHES[m] && !!(L.meshData && L.meshData[m]);
+  const NONCONVEX = { torus: 1, blob: 1, drape: 1, head: 1, headF: 1, skull: 1, bodyF: 1, bodyM: 1, heroF: 1, heroM: 1 };
   const STEP = { egg: 0.9, drape: 0.8 };
   const G_A = 0.62, G_Y = -0.86;
   const GN = [0, Math.cos(G_A), Math.sin(G_A)];
@@ -103,13 +107,13 @@
     const l2 = S.light2 || { on: false }, L2 = norm3(l2.dir || [0.6, 0.2, 0.7]);
     const cy = Math.cos(S.rot.yaw), sy = Math.sin(S.rot.yaw), cp = Math.cos(S.rot.pitch), sp = Math.sin(S.rot.pitch);
     const M = [cy, 0, sy, sp * sy, cp, -sp * cy, -cp * sy, sp, cp * cy]; // world = M * obj
-    const isMesh = !!MESHES[S.model] && !!meshGet(S.model);
+    const isMesh = hasMesh(S.model);
     const persp = LENS[S.lens] || 0;
     const useSdf = !isMesh && (S.model !== 'sphere' || S.planes || S.ground || persp);
     const tr = (v) => [M[0] * v[0] + M[3] * v[1] + M[6] * v[2], M[1] * v[0] + M[4] * v[1] + M[7] * v[2], M[2] * v[0] + M[5] * v[1] + M[8] * v[2]];
     const bo = S.bounce || { color: [0, 0, 0], intensity: 0 };
     return {
-      L: Ld, H, M, isMesh, persp,
+      L: Ld, H, M, isMesh, persp, gy: MESHES[S.model] && MESHES[S.model].gy != null ? MESHES[S.model].gy : G_Y,
       sdf: useSdf ? SDF[S.model] || SDF.sphere : null,
       Lobj: tr(Ld), GNobj: tr(GN),
       lc: C.lin3(S.light.color).map((c) => c * S.light.intensity),
@@ -240,10 +244,10 @@
     const q = Math.sqrt(disc);
     return [-b - q, -b + q];
   }
-  function groundT(R6) {
+  function groundT(R6, gy) {
     const den = R6[3] * GN[0] + R6[4] * GN[1] + R6[5] * GN[2];
     if (den >= -1e-6) return -1;
-    return ((0 - R6[0]) * GN[0] + (G_Y - R6[1]) * GN[1] + (0 - R6[2]) * GN[2]) / den;
+    return ((0 - R6[0]) * GN[0] + (gy - R6[1]) * GN[1] + (0 - R6[2]) * GN[2]) / den;
   }
 
   const R6 = new Float64Array(6);
@@ -265,9 +269,9 @@
     const M = P.M, f = P.sdf;
     let tG = Infinity, fade = 0;
     if (P.ground) {
-      const t = groundT(R6);
+      const t = groundT(R6, P.gy);
       if (t > 0) {
-        const dist = len3(R6[0] + R6[3] * t, R6[1] + R6[4] * t - G_Y, R6[2] + R6[5] * t);
+        const dist = len3(R6[0] + R6[3] * t, R6[1] + R6[4] * t - P.gy, R6[2] + R6[5] * t);
         fade = 1 - smooth(0.55, 1.1, dist);
         if (fade > 0.002) tG = t;
       }
@@ -407,6 +411,144 @@
     return (meshCache[name] = { src: d, n: d.v, t: d.t, pos, nor, idx });
   }
 
+  // ---------- rigged meshes: skeleton, pose, linear blend skinning ----------
+  // Pose = rotations in the BODY frame (x: bend fwd/back, y: turn, z: tilt sideways), so sliders mean the same on every rig.
+  const skinCache = {};
+  function mul4(a, b) { const o = new Float64Array(16); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3]; return o; }
+  function skinBase(name) {
+    const d = L.meshData && L.meshData[name];
+    if (!d || !d.skinned) return null;
+    if (skinCache[name] && skinCache[name].src === d) return skinCache[name];
+    const pb = new DataView(b64bytes(d.pos).buffer), nb = b64bytes(d.nor), jb = b64bytes(d.jnt), wb = b64bytes(d.wgt), iv = new DataView(b64bytes(d.idx).buffer);
+    const n = d.v, P0 = new Float32Array(n * 3), N0 = new Float32Array(n * 3), W0 = new Float32Array(n * 4), idx = new Uint32Array(d.t * 3);
+    for (let i = 0; i < n * 3; i++) P0[i] = d.qo[i % 3] + (pb.getInt16(i * 2, true) / 32767) * d.qs;
+    for (let i = 0; i < n; i++) { const a = (nb[i * 3] << 24) >> 24, b = (nb[i * 3 + 1] << 24) >> 24, c = (nb[i * 3 + 2] << 24) >> 24, l = Math.sqrt(a * a + b * b + c * c) || 1; N0[i * 3] = a / l; N0[i * 3 + 1] = b / l; N0[i * 3 + 2] = c / l; }
+    for (let i = 0; i < n * 4; i++) W0[i] = wb[i] / 255;
+    for (let i = 0; i < d.t * 3; i++) idx[i] = iv.getUint16(i * 2, true);
+    const J = d.skel.map((j) => ({ n: j.n, p: j.p, L: Float64Array.from(j.l), B: Float64Array.from(j.b) }));
+    const byName = {}; J.forEach((j, k) => { byName[j.n] = k; });
+    const RG = [];
+    const rg = (k) => RG[k] || (RG[k] = J[k].p >= 0 ? mul4(rg(J[k].p), J[k].L) : J[k].L);
+    J.forEach((_, k) => rg(k));
+    // rest global rotation (orthonormalised 3x3, column-major)
+    const RR = RG.map((m) => { const c = [0, 4, 8].map((o) => { const v = [m[o], m[o + 1], m[o + 2]], l = Math.hypot(v[0], v[1], v[2]) || 1; return v.map((x) => x / l); }); return c; });
+    const pos = (k) => [RG[k][12], RG[k][13], RG[k][14]];
+    // spread direction per finger (positive = away from the middle finger)
+    const rig = d.rig || { fingers: {}, sem: {} };
+    const fx = {};
+    for (const key in rig.fingers) {
+      const F = rig.fingers[key], sfx = key.slice(-2), mid = rig.fingers['middle' + sfx];
+      const j1 = byName[F.joints[0]], j2 = byName[F.joints[1]];
+      if (j1 == null || j2 == null) continue;
+      const dir = norm3([0, 1, 2].map((c) => pos(j2)[c] - pos(j1)[c])), nAx = F.spread;
+      const mv = [nAx[1] * dir[2] - nAx[2] * dir[1], nAx[2] * dir[0] - nAx[0] * dir[2], nAx[0] * dir[1] - nAx[1] * dir[0]];
+      let sg = 0;
+      if (mid && mid !== F && byName[mid.joints[0]] != null) { const off = [0, 1, 2].map((c) => pos(j1)[c] - pos(byName[mid.joints[0]])[c]); sg = Math.sign(mv[0] * off[0] + mv[1] * off[1] + mv[2] * off[2]); }
+      fx[key] = sg;
+    }
+    return (skinCache[name] = { src: d, n, t: d.t, P0, N0, J0: jb, W0, idx, J, byName, RR, rig, fx, frame: d.frame, last: null });
+  }
+  const D2R = Math.PI / 180;
+  function rotAxis(ax, deg) { // 3x3 column-major
+    const a = norm3(ax), t = deg * D2R, c = Math.cos(t), s = Math.sin(t), C1 = 1 - c, [x, y, z] = a;
+    return [x * x * C1 + c, y * x * C1 + z * s, z * x * C1 - y * s, x * y * C1 - z * s, y * y * C1 + c, z * y * C1 + x * s, x * z * C1 + y * s, y * z * C1 - x * s, z * z * C1 + c];
+  }
+  const m3 = (a, b) => { const o = new Array(9); for (let c = 0; c < 3; c++) for (let r = 0; r < 3; r++) o[c * 3 + r] = a[r] * b[c * 3] + a[3 + r] * b[c * 3 + 1] + a[6 + r] * b[c * 3 + 2]; return o; };
+  function eulerBody(e) { return m3(rotAxis([0, 1, 0], e[1] || 0), m3(rotAxis([1, 0, 0], e[0] || 0), rotAxis([0, 0, 1], e[2] || 0))); }
+  function posed(name, pose) {
+    const K = skinBase(name);
+    if (!K) return null;
+    const key = JSON.stringify(pose || {});
+    if (K.last && K.last.key === key) return K.last.mesh;
+    const J = K.J, nj = J.length, deltas = new Array(nj).fill(null);
+    const addDelta = (k, Rw) => { if (k == null || k < 0) return; deltas[k] = deltas[k] ? m3(Rw, deltas[k]) : Rw; };
+    const base = K.base || (K.base = baselineFrames(K));
+    const pj = (pose && pose.j) || {};
+    const lx = K.rig.leftX || 1;
+    for (const sem in pj) {
+      const e = pj[sem]; if (!e || (!e[0] && !e[1] && !e[2])) continue;
+      // UI semantics -> body-frame rotation: Bend = natural flexion, Turn / Tilt mirrored between sides
+      const base2 = sem.replace(/_[lr]$/, ''), side = /_l$/.test(sem) ? 1 : /_r$/.test(sem) ? -1 : 0;
+      const fx = FLEX[base2] || 1, sy = side ? side * lx : lx, sz = side ? side * lx : -lx;
+      addDelta(K.byName[K.rig.sem[sem]], eulerBody([(e[0] || 0) * fx, (e[1] || 0) * sy, (e[2] || 0) * sz]));
+    }
+    const pf = (pose && pose.f) || {};
+    for (const key2 in K.rig.fingers) {
+      const F = K.rig.fingers[key2], side = key2.slice(-1), h = pf[side]; if (!h) continue;
+      const isThumb = key2.indexOf('thumb') === 0, curl = isThumb ? h.thumb || 0 : h.curl || 0;
+      const spread = isThumb ? 0 : (h.spread || 0) * ({ index: 1, middle: 0.25, ring: 0.6, pinky: 1.1 }[key2.split('_')[0]] || 0) * (K.fx[key2] || 0) * (F.fused ? 0.2 : 1);
+      const share = isThumb ? [0.45, 0.8, 0.75] : [0.85, 1.1, 0.75];
+      F.joints.forEach((jn, i) => {
+        const k = K.byName[jn]; if (k == null) return;
+        let Rw = curl ? rotAxis(F.curl, curl * share[i]) : null;
+        if (i === 0 && spread) Rw = Rw ? m3(Rw, rotAxis(F.spread, spread)) : rotAxis(F.spread, spread);
+        if (Rw) addDelta(k, Rw);
+      });
+    }
+    // globals: rest local * baseline (common A-pose) * user delta (body-frame rotation seen at the baseline pose)
+    const G = new Array(nj);
+    const g = (k) => {
+      if (G[k]) return G[k];
+      let D3 = base.D[k];
+      if (deltas[k]) { const Rb = base.R[k], RbT = tr3(Rb); D3 = m3(D3 || I3, m3(RbT, m3(deltas[k], Rb))); }
+      const Lm = D3 ? mul4(J[k].L, to4(D3)) : J[k].L;
+      return (G[k] = J[k].p >= 0 ? mul4(g(J[k].p), Lm) : Lm);
+    };
+    const SK = J.map((j, k) => mul4(g(k), j.B));
+    const n = K.n, pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), P0 = K.P0, N0 = K.N0, JJ = K.J0, WW = K.W0;
+    const fk = K.frame.k, fc = K.frame.c;
+    for (let v = 0; v < n; v++) {
+      let px = 0, py = 0, pz = 0, nx = 0, ny = 0, nz = 0;
+      const x = P0[v * 3], y = P0[v * 3 + 1], z = P0[v * 3 + 2], a = N0[v * 3], b = N0[v * 3 + 1], c = N0[v * 3 + 2];
+      for (let q = 0; q < 4; q++) {
+        const w = WW[v * 4 + q]; if (!w) continue; const Mq = SK[JJ[v * 4 + q]];
+        px += w * (Mq[0] * x + Mq[4] * y + Mq[8] * z + Mq[12]); py += w * (Mq[1] * x + Mq[5] * y + Mq[9] * z + Mq[13]); pz += w * (Mq[2] * x + Mq[6] * y + Mq[10] * z + Mq[14]);
+        nx += w * (Mq[0] * a + Mq[4] * b + Mq[8] * c); ny += w * (Mq[1] * a + Mq[5] * b + Mq[9] * c); nz += w * (Mq[2] * a + Mq[6] * b + Mq[10] * c);
+      }
+      pos[v * 3] = (px - fc[0]) * fk; pos[v * 3 + 1] = (py - fc[1]) * fk; pos[v * 3 + 2] = (pz - fc[2]) * fk;
+      const l = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1; nor[v * 3] = nx / l; nor[v * 3 + 1] = ny / l; nor[v * 3 + 2] = nz / l;
+    }
+    const mesh = { n, t: K.t, pos, nor, idx: K.idx, joint: (jn) => { const k = K.byName[jn]; if (k == null) return null; const m = G[k]; return [(m[12] - fc[0]) * fk, (m[13] - fc[1]) * fk, (m[14] - fc[2]) * fk]; } };
+    K.last = { key, mesh };
+    return mesh;
+  }
+  const I3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  // sign of "Bend" per joint so that positive = natural flexion (limbs hang down, spine points up)
+  const FLEX = { arm: -1, elbow: -1, wrist: -1, shoulder: -1, thigh: -1, ankle: -1, knee: 1, hips: 1, spine: 1, chest: 1, neck: 1, head: 1 };
+  // pose presets (UI semantics: [bend, turn, tilt] in degrees; tilt on arms = raise sideways)
+  const relaxedArms = { arm_l: [4, 0, -14], arm_r: [4, 0, -14], elbow_l: [12, 0, 0], elbow_r: [12, 0, 0] };
+  const hands = (c, t, sp) => ({ l: { curl: c, thumb: t, spread: sp }, r: { curl: c, thumb: t, spread: sp } });
+  const POSES = {
+    'A-pose': { j: {}, f: hands(0, 0, 0) },
+    Relaxed: { j: Object.assign({}, relaxedArms), f: hands(25, 15, 5) },
+    Contrapposto: { j: Object.assign({}, relaxedArms, { hips: [0, 0, 6], chest: [0, 6, -7], head: [4, 14, 4], thigh_l: [10, 0, 2], knee_l: [22, 0, 0], ankle_l: [-8, 0, 0], thigh_r: [0, 0, -3], elbow_l: [18, 0, 0] }), f: hands(30, 18, 6) },
+    'Hand on hip': { j: Object.assign({}, relaxedArms, { arm_r: [-15, 0, 40], elbow_r: [0, 0, -110], hips: [0, 0, 4], chest: [0, -8, -4], head: [0, 12, 0], thigh_l: [6, 0, 0], knee_l: [12, 0, 0] }), f: { l: { curl: 25, thumb: 15, spread: 5 }, r: { curl: 15, thumb: 10, spread: 0 } } },
+    Thinking: { j: Object.assign({}, relaxedArms, { arm_l: [30, 0, -30], elbow_l: [150, 0, -55], head: [12, 8, 0], chest: [5, 0, 0] }), f: { l: { curl: 55, thumb: 35, spread: 0 }, r: { curl: 35, thumb: 20, spread: 0 } } },
+    Walk: { j: { thigh_l: [24, 0, 0], knee_l: [12, 0, 0], ankle_l: [-6, 0, 0], thigh_r: [-16, 0, 0], knee_r: [28, 0, 0], ankle_r: [12, 0, 0], arm_l: [-18, 0, -12], arm_r: [20, 0, -12], elbow_l: [14, 0, 0], elbow_r: [30, 0, 0], chest: [0, -7, 0], hips: [0, 6, 0] }, f: hands(28, 15, 4) },
+    Reach: { j: Object.assign({}, relaxedArms, { arm_r: [25, 0, 135], elbow_r: [10, 0, 0], head: [-18, 10, 0], chest: [-6, 0, 6] }), f: { l: { curl: 25, thumb: 15, spread: 5 }, r: { curl: 5, thumb: 5, spread: 18 } } },
+    Fists: { j: Object.assign({}, relaxedArms, { elbow_l: [35, 0, 0], elbow_r: [35, 0, 0] }), f: hands(90, 60, 0) },
+  };
+  const tr3 = (a) => [a[0], a[3], a[6], a[1], a[4], a[7], a[2], a[5], a[8]];
+  const to4 = (a) => Float64Array.from([a[0], a[1], a[2], 0, a[3], a[4], a[5], 0, a[6], a[7], a[8], 0, 0, 0, 0, 1]);
+  const rot3 = (m) => { const c = [0, 4, 8].map((o) => { const v = [m[o], m[o + 1], m[o + 2]], l = Math.hypot(v[0], v[1], v[2]) || 1; return v.map((x) => x / l); }); return [c[0][0], c[0][1], c[0][2], c[1][0], c[1][1], c[1][2], c[2][0], c[2][1], c[2][2]]; };
+  // every rig is first brought to the same relaxed A-pose (upper arms ~22deg from the body) so sliders behave identically
+  function baselineFrames(K) {
+    const J = K.J, nj = J.length, D = new Array(nj).fill(null), rig = K.rig, A = 22;
+    const restR = (k) => { const r = K.RR[k]; return [r[0][0], r[0][1], r[0][2], r[1][0], r[1][1], r[1][2], r[2][0], r[2][1], r[2][2]]; };
+    const put = (sem, Rw) => { const k = K.byName[rig.sem[sem]]; if (k == null) return; const Rr = restR(k); D[k] = m3(tr3(Rr), m3(Rw, Rr)); };
+    if (rig.armRestDeg) {
+      const lx = rig.leftX || 1;
+      put('arm_l', rotAxis([0, 0, 1], -lx * (rig.armRestDeg.l - A)));
+      put('arm_r', rotAxis([0, 0, 1], lx * (rig.armRestDeg.r - A)));
+    }
+    const GB = new Array(nj);
+    const gb = (k) => GB[k] || (GB[k] = J[k].p >= 0 ? mul4(gb(J[k].p), D[k] ? mul4(J[k].L, to4(D[k])) : J[k].L) : (D[k] ? mul4(J[k].L, to4(D[k])) : J[k].L));
+    const Rb = J.map((_, k) => rot3(gb(k)));
+    return { D, R: Rb };
+  }
+  const meshFor = (S) => (MESHES[S.model] && MESHES[S.model].skinned ? posed(S.model, S.pose) : meshGet(S.model));
+  const rigOf = (m) => { const K = skinBase(m); return K ? { sem: K.rig.sem, leftX: K.rig.leftX, armRestDeg: K.rig.armRestDeg, hasFingers: Object.keys(K.rig.fingers).length > 0 } : null; };
+
   // rasterise triangles (projected sx, sy, depth sd) into depth buffer; onPix for each written pixel. Yields periodically.
   function* raster(m, sx, sy, sd, w, h, depth, cull, onPix) {
     const idx = m.idx;
@@ -474,7 +616,7 @@
 
   // mesh frame -> linear colour + alpha at (w, h)
   function* genMeshFrame(S, w, h) {
-    const P = prepare(S), m = meshGet(S.model), M = P.M, D = P.persp;
+    const P = prepare(S), m = meshFor(S), M = P.M, D = P.persp;
     const n = m.n, sx = new Float32Array(n), sy = new Float32Array(n), sd = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       const x = m.pos[i * 3], y = m.pos[i * 3 + 1], z = m.pos[i * 3 + 2];
@@ -503,10 +645,10 @@
           let gz = -1e9, fade = 0, gwx = 0, gwy = 0;
           if (P.ground) {
             ray(vx, vy, P, R6);
-            const t = groundT(R6);
+            const t = groundT(R6, P.gy);
             if (t > 0) {
               gwx = R6[0] + R6[3] * t; gwy = R6[1] + R6[4] * t; const wz = R6[2] + R6[5] * t;
-              fade = 1 - smooth(0.55, 1.1, len3(gwx, gwy - G_Y, wz));
+              fade = 1 - smooth(0.55, 1.1, len3(gwx, gwy - P.gy, wz));
               if (fade > 0.002) gz = wz;
             }
           }
@@ -539,7 +681,7 @@
   }
   let meshPickCache = null;
   function pickKey(S) {
-    return JSON.stringify([S.model, S.rot, S.light, S.light2, S.ambient, S.bounce, S.rim, S.matA, S.matB, S.compare, S.shadows, S.planes, S.ground, S.groundColor, S.lens, S.shadowTint, S.envCustom, S.envColor]);
+    return JSON.stringify([S.model, S.rot, S.light, S.light2, S.ambient, S.bounce, S.rim, S.matA, S.matB, S.compare, S.shadows, S.planes, S.ground, S.groundColor, S.lens, S.shadowTint, S.envCustom, S.envColor, MESHES[S.model] && MESHES[S.model].skinned ? S.pose : 0]);
   }
   function* genMesh(S, W, H, ss) {
     const f = Math.max(1, Math.min(2, ss || 1)), w = W * f, h = H * f;
@@ -579,12 +721,12 @@
   // renderGen(S, W, H, {ss}) -> generator; returns RGBA Uint8Array. render() = synchronous drain.
   function renderGen(S, W, H, opt) {
     const ss = (opt && opt.ss) || 1;
-    if (MESHES[S.model] && meshGet(S.model)) return genMesh(S, W, H, ss > 1 ? 2 : 1);
+    if (hasMesh(S.model)) return genMesh(S, W, H, ss > 1 ? 2 : 1);
     return genTrace(S, W, H, ss);
   }
   const render = (S, W, H, opt) => drain(renderGen(S, W, H, opt));
   function pick(S, vx, vy) {
-    if (MESHES[S.model] && meshGet(S.model)) return pickMesh(S, vx, vy);
+    if (hasMesh(S.model)) return pickMesh(S, vx, vy);
     const P = prepare(S), out = [0, 0, 0];
     if (!trace(vx, vy, P, out)) return null;
     return { color: out.map((v) => clamp01(enc(v))) };
@@ -667,6 +809,8 @@
       envCustom: false, envColor: [0.55, 0.62, 0.8],
       backdrop: 'dark', backdropColor: [0.36, 0.34, 0.32],
       pins: {},
+      pose: { j: {}, f: { l: { curl: 0, spread: 0, thumb: 0 }, r: { curl: 0, spread: 0, thumb: 0 } } },
+      poseJoint: 'head',
       ambient: { color: [0.36, 0.44, 0.78], intensity: 0.35, temp: 0.2 },
       bounce: { color: [0.62, 0.5, 0.4], intensity: 0.25 },
       rim: { color: [0.45, 0.85, 1], intensity: 0.0, width: 0.35 },
@@ -704,8 +848,10 @@
 
   L.render = {
     VIEW, RS, EMAX, render, renderGen, pick, ramp, families, prepare, lightFromHandle, handleFromLight, defaultState, presets,
-    setups, views, kelvin, shadowTemp, dirAE, isMesh: (m) => !!MESHES[m],
-    models: ['sphere', 'head', 'headF', 'skull', 'egg', 'cube', 'cylinder', 'cone', 'torus', 'drape', 'blob'],
-    modelRot: { head: { yaw: 0.45, pitch: 0.06 }, headF: { yaw: 0.45, pitch: 0.06 }, skull: { yaw: 0.5, pitch: 0.05 }, drape: { yaw: 0.35, pitch: 0.1 }, egg: { yaw: 0, pitch: 0.2 } },
+    setups, views, kelvin, shadowTemp, dirAE, isMesh: (m) => !!MESHES[m], isRigged: (m) => !!(MESHES[m] && MESHES[m].skinned && L.meshData && L.meshData[m]), rigOf,
+    poses: POSES, poseJoints: ['head', 'neck', 'chest', 'spine', 'hips', 'arm_l', 'elbow_l', 'wrist_l', 'arm_r', 'elbow_r', 'wrist_r', 'thigh_l', 'knee_l', 'ankle_l', 'thigh_r', 'knee_r', 'ankle_r'],
+    jointPos: (m, pose, sem) => { const K = skinBase(m), ms = posed(m, pose); return K && ms ? ms.joint(K.rig.sem[sem] || sem) : null; },
+    models: ['sphere', 'head', 'headF', 'skull', 'bodyF', 'bodyM', 'heroF', 'heroM', 'egg', 'cube', 'cylinder', 'cone', 'torus', 'drape', 'blob'],
+    modelRot: { bodyF: { yaw: 0.35, pitch: 0.04 }, bodyM: { yaw: 0.35, pitch: 0.04 }, heroF: { yaw: 0.35, pitch: 0.04 }, heroM: { yaw: 0.35, pitch: 0.04 }, head: { yaw: 0.45, pitch: 0.06 }, headF: { yaw: 0.45, pitch: 0.06 }, skull: { yaw: 0.5, pitch: 0.05 }, drape: { yaw: 0.35, pitch: 0.1 }, egg: { yaw: 0, pitch: 0.2 } },
   };
 })((window.Yekta = window.Yekta || {}));

@@ -191,3 +191,12 @@ img { -webkit-user-drag: none; user-select: none; }
 .fams.pinmode .fsw { box-shadow: 0 0 0 1px rgba(243,180,74,0.5); }
 .fam.pinned .fl { color: var(--acc); }
 .row .btn + .btn { margin-left: 4px; }
+/* models wrap into rows; pose box */
+.models { flex-wrap: wrap; justify-content: flex-start; }
+.model { margin: 0 3px 3px 0; }
+.posebox { margin-top: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--s1); }
+.posebox .famhead { margin-top: 0; }
+.posebox .setups { margin-top: 6px; }
+.jchips { margin: 4px 0 6px; }
+.jchips .btn { margin: 0 2px 2px 0; border-color: var(--line); }
+.jchips .btn.posed:not(.on) { color: var(--text); border-color: #5a5040; }

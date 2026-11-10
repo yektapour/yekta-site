@@ -3,10 +3,10 @@
 // Usage: node tools/build.js
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const root = path.join(__dirname, '..'), core = path.join(root, 'core'), dist = path.join(root, 'dist');
-const CORE = ['index.html', 'styles.css', 'color.js', 'png.js', 'render.js', 'mesh-head.js', 'mesh-headF.js', 'mesh-skull.js', 'thumbs.js', 'host.js', 'app.js', 'CREDITS.txt'];
+const CORE = ['index.html', 'styles.css', 'color.js', 'png.js', 'render.js', 'mesh-head.js', 'mesh-headF.js', 'mesh-skull.js', 'mesh-bodyF.js', 'mesh-bodyM.js', 'mesh-heroF.js', 'mesh-heroM.js', 'thumbs.js', 'host.js', 'app.js', 'CREDITS.txt'];
 
 global.window = {};
-for (const f of ['color.js', 'png.js', 'render.js', 'mesh-head.js', 'mesh-headF.js', 'mesh-skull.js']) eval(fs.readFileSync(path.join(core, f), 'utf8'));
+for (const f of ['color.js', 'png.js', 'render.js', 'mesh-head.js', 'mesh-headF.js', 'mesh-skull.js', 'mesh-bodyF.js', 'mesh-bodyM.js', 'mesh-heroF.js', 'mesh-heroM.js']) eval(fs.readFileSync(path.join(core, f), 'utf8'));
 const Y = global.window.Yekta, R = Y.render;
 
 // ---- thumbnails ----

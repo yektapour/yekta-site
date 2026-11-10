@@ -28,7 +28,10 @@ The problem it solves (use as a short section):
 ## 2. Features (final copy, grouped)
 
 **Real 3D forms**
-Male and female head scans, an anatomical skull, plus sphere, egg, cube, cylinder, cone, torus, drapery and an organic form. Five camera angles and Ortho / 85 / 50 / 35 mm lenses.
+Male and female head scans, an anatomical skull, four posable full bodies, plus sphere, egg, cube, cylinder, cone, torus, drapery and an organic form. Five camera angles and Ortho / 85 / 50 / 35 mm lenses.
+
+**Posable full bodies**
+Four fully rigged bodies — realistic female and male plus two mannequins — with every joint posable, fingers included. One-click poses (Relaxed, Contrapposto, Hand on hip, Thinking, Walk, Reach, Fists), then fine-tune any joint with Bend / Turn / Tilt, curl or spread the fingers, and mirror left to right.
 
 **Light like a photographer**
 Drag the sun anywhere — in front, at the side or behind for rim light. One-click portrait setups: Rembrandt, Loop, Butterfly, Split, Rim, Under. Key and second light with real color temperature in Kelvin, sky light, ground bounce and rim light.
@@ -97,6 +100,8 @@ Small print under the download buttons:
 | `media/screenshots/heads-value-modes.png` | Heads and skull in value modes |
 | `media/screenshots/toolbars.png`, `families.png`, `big.png` | UI details |
 | `media/screenshots/sec_*.png` | Settings sections (light, material, color, grid, presets) |
+| `media/screenshots/pose_bodyF.png`, `pose_bodyM.png`, `pose_heroF.png`, `pose_heroM.png` | Posable bodies in preset poses |
+| `media/screenshots/posebox.png` | The Pose controls |
 | `media/icon-96.png` | App icon |
 
 Copy the media files into the website's own assets folder and serve them from the site (do not hotlink raw GitHub files — raw.githubusercontent.com is not meant for video streaming).
@@ -125,13 +130,15 @@ Suggested page structure:
 - Male head: “Lee Perry-Smith” head scan © Infinite-Realities — licensed **CC BY 3.0** (attribution required).
 - Female head: “Woman’s Head” by Artur Loewental (plaster, The Collection, Lincoln), scan from Three D Scans (threedscans.com) by Oliver Laric — published without copyright restrictions.
 - Skull: by Vladimir Petkovic, Khronos glTF Sample Assets — CC0.
+- Full bodies: “Woman Base Mesh” and “Man Base Mesh” by Grab3D (grab3d.com) — CC0 (finger rig added by Yekta Light).
+- Mannequins: “Universal Base Characters” by Quaternius (quaternius.com) — CC0.
 
 ---
 
 ## 7. Facts — do not change
 
 - Price: **free**.
-- Version: **2.0**.
+- Version: **2.1**.
 - Photoshop: Photoshop 2022 (23.3) or newer, Windows and macOS.
 - Clip Studio Paint: separate always-on-top app (Clip Studio does not support third-party panels); Windows 10/11 64-bit, macOS 11+ (Apple Silicon and Intel).
 - Website: yektapour.com

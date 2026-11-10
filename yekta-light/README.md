@@ -2,7 +2,7 @@
 
 **The 3D light color picker for painters.** Free for Photoshop and Clip Studio Paint.
 
-Light a real 3D form — scanned heads, a skull, study forms — and pick the exact color the light creates:
+Light a real 3D form — scanned heads, a skull, posable full bodies, study forms — and pick the exact color the light creates:
 highlight, halftone, terminator, core shadow, reflected light, cast shadow.
 
 ![Yekta Light](media/screenshots/top.png)
@@ -37,5 +37,7 @@ WEBSITE-BRIEF.md   everything needed to build the product page on yektapour.com
 - Male head: “Lee Perry-Smith” head scan © Infinite-Realities — CC BY 3.0.
 - Female head: “Woman’s Head” by Artur Loewental, scan from Three D Scans (Oliver Laric) — no copyright restrictions.
 - Skull: Vladimir Petkovic, Khronos glTF Sample Assets — CC0.
+- Full bodies: Grab3D Man / Woman Base Mesh — CC0 (finger rig added by Yekta Light).
+- Mannequins: Quaternius Universal Base Characters — CC0.
 
 Made by [yektapour.com](https://yektapour.com).
