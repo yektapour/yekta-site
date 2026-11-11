@@ -2,11 +2,11 @@
  "channel": "UCZEsguNUORbpBVoxmewQizg",
  "items": [
   {
-   "id": "xohUJg9HM3o",
-   "title": "I Built a Free 3D Light Tool for Painters",
-   "published": "2026-11-11T10:15:08+00:00",
+   "id": "DLdNJ4QHdlg",
+   "title": "overthink(paint)ing",
+   "published": "2026-11-11T19:17:58+00:00",
    "short": false,
-   "vtab": true,
+   "vtab": false,
    "checked": 1,
    "live": false,
    "livechk": 1
@@ -14,7 +14,7 @@
   {
    "id": "u0KkAL2hyTA",
    "title": "overthink(paint)ing",
-   "published": "2026-11-11T06:35:40+00:00",
+   "published": "2026-11-11T19:05:25+00:00",
    "short": false,
    "vtab": false,
    "checked": 1,
@@ -22,11 +22,11 @@
    "livechk": 1
   },
   {
-   "id": "DLdNJ4QHdlg",
-   "title": "overthink(paint)ing",
-   "published": "2026-11-11T04:30:54+00:00",
+   "id": "xohUJg9HM3o",
+   "title": "I Built a Free 3D Light Tool for Painters",
+   "published": "2026-11-11T10:15:08+00:00",
    "short": false,
-   "vtab": false,
+   "vtab": true,
    "checked": 1,
    "live": false,
    "livechk": 1
