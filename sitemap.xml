@@ -2,7 +2,8 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 <url><loc>https://yektapour.com/</loc><lastmod>2026-11-07</lastmod><image:image><image:loc>https://yektapour.com/img/og.jpg</image:loc></image:image></url>
 <url><loc>https://yektapour.com/about/</loc><lastmod>2026-10-28</lastmod><image:image><image:loc>https://yektapour.com/og/about.jpg</image:loc></image:image></url>
-<url><loc>https://yektapour.com/interactive/</loc><lastmod>2026-10-18</lastmod></url>
+<url><loc>https://yektapour.com/interactive/</loc><lastmod>2026-11-11</lastmod></url>
+<url><loc>https://yektapour.com/interactive/checkmeme/</loc><lastmod>2026-11-11</lastmod><image:image><image:loc>https://yektapour.com/img/interactive/yekta-checkmeme-960.webp</image:loc><image:title>CHECKMEME: The Move</image:title></image:image></url>
 <url><loc>https://yektapour.com/interactive/futility/</loc><lastmod>2026-10-18</lastmod><image:image><image:loc>https://yektapour.com/img/interactive/yekta-futility-960.webp</image:loc><image:title>Futility</image:title></image:image></url>
 <url><loc>https://yektapour.com/interactive/an-image-listened-to/</loc><lastmod>2026-10-13</lastmod><image:image><image:loc>https://yektapour.com/img/interactive/yekta-an-image-listened-to-960.webp</image:loc><image:title>An Image, Listened To</image:title></image:image></url>
 <url><loc>https://yektapour.com/tools/</loc><lastmod>2026-11-10</lastmod></url>
