@@ -1896,8 +1896,11 @@ const blockNow = () => Math.floor(15537394 + (Date.now() / 1000 - 1663224179) / 
 /* the watch is always live: painted hands replaced by real ones that follow the viewer's own clock */
 let watchSpin = null;
 async function installWatch() {
-  if (!ly('watch_dial')) return;
-  await lift('watch_dial');
+  const D = LAYERS && LAYERS.watch_dial;
+  if (!D) return;
+  // the clean dial (painted hands removed) lives in the same SVG as the new hands, so the two are always
+  // drawn together; as a separate <img> some browsers (Firefox) drop it for a frame while re-rasterizing on zoom
+  sv('image', { href: D.p, x: D.pr[0], y: D.pr[1], width: D.pr[2], height: D.pr[3], preserveAspectRatio: 'none' }, fxsvg);
   // the dial is seen at an angle: map a unit clock face onto it
   const C = [303.5, 586.6], a3 = [28.4, -3.9], a12 = [1.2, -20.8];
   const mat = `matrix(${a3[0]} ${a3[1]} ${-a12[0]} ${-a12[1]} ${C[0]} ${C[1]})`;
