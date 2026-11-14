@@ -50,6 +50,7 @@ Process name: overthink(paint)ing
 
 ## Tools
 - [Yekta Light](https://yektapour.com/tools/yekta-light/): The 3D light color picker for painters. Light a posable 3D figure and pick the exact color the light creates. Free, runs in your browser.
+- [CHECKMEME Meme Maker](https://yektapour.com/tools/checkmeme-meme-maker/): Make your own CHECKMEME meme. Pick one or two characters from the painting, write their lines, and download a PNG or an animated GIF. Free, runs in your browser.
 
 ## Articles
 - [CHECKMEME | The Move: A Painting That Talks Back](https://yektapour.com/articles/checkmeme/): An interactive meme for The Memes by 6529: a game of chess where every piece is a meme, and every piece talks back.
