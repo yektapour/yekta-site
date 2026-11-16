@@ -1,0 +1,1100 @@
+{
+ "hair": [
+  {
+   "id": "afro01",
+   "name": "afro01",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "bob01",
+   "name": "bob01",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "bob02",
+   "name": "bob02",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "braid01",
+   "name": "Braid01",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "long01",
+   "name": "long01",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "ponytail01",
+   "name": "ponytail01",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "short01",
+   "name": "short01",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "short02",
+   "name": "short02",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "short03",
+   "name": "short03",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "short04",
+   "name": "short04",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "cortu_shaggy_green_hair",
+   "name": "shaggy_green",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "cortu_short_messy_hair",
+   "name": "short_messy",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "cortu_straight_bangs",
+   "name": "straight_bangs",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "cortu_strawberry_cloud_hair",
+   "name": "strawberry_cloud",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "culturalibre_hair_01",
+   "name": "fhair01",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "culturalibre_hair_02",
+   "name": "mhair02",
+   "license": "CC0",
+   "author": "MHteam",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "culturalibre_hair_05",
+   "name": "hair_05",
+   "license": "CC0",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "culturalibre_hair_06",
+   "name": "hair_06",
+   "license": "CC0",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_double_mh_braid",
+   "name": "double_mhbraid",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "elvs_french_braid_variation",
+   "name": "frenchbraid1mh01",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "elvs_reverse_french_braid_bun",
+   "name": "rev_fr_braidbun1",
+   "license": "CC0",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "elvs_unkempt_french_braid",
+   "name": "unkempt_mhbraidfr",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "faydaen_hair_1",
+   "name": "hair1",
+   "license": "CC0",
+   "author": "",
+   "tex": 1,
+   "alpha": false,
+   "color": [
+    0.588,
+    0.588,
+    0.588
+   ]
+  },
+  {
+   "id": "learning_anime_hair",
+   "name": "animehair",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.0,
+    0.4835
+   ]
+  },
+  {
+   "id": "littleright_bobcut_hair",
+   "name": "LITTLERIGHT_hair_BobCut",
+   "license": "CC0",
+   "author": "littleright",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.8,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "o4saken_long01",
+   "name": "o4saken_long01",
+   "license": "CC0",
+   "author": "04saken",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "rehmanpolanski_hair_bun_brown",
+   "name": "Hair_bun_brown",
+   "license": "CC0",
+   "author": "Rehman Polanski",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "sonntag78_blond_with_headband",
+   "name": "blondwithheadband",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "sonntag78_junglebook_hair",
+   "name": "junglebookhair",
+   "license": "CC0",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "toigo_blunt_bob",
+   "name": "Bob_Blunt",
+   "license": "CC0",
+   "author": "MRT",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "toigo_blunt_bob_with_bangs",
+   "name": "Bob_Blunt_Bangs",
+   "license": "CC0",
+   "author": "MRT",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "toigo_curled_under_bob",
+   "name": "Bob_Curled_Under",
+   "license": "CC0",
+   "author": "MRT",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "toigo_curled_under_bob_with_bangs",
+   "name": "Bob_Curled_Under_Bangs",
+   "license": "CC0",
+   "author": "MRT",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "toigo_inverted_bob",
+   "name": "Bob_Inverted",
+   "license": "CC0",
+   "author": "MRT",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "toigo_inverted_bob_with_bangs",
+   "name": "Bob_Inverted_bangs",
+   "license": "CC0",
+   "author": "MRT",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_50s_updo",
+   "name": "elv_50supdo1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_adrienne_hair",
+   "name": "elvs_adrienne_hair1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_ashley_may_hair",
+   "name": "elvs_ashley_mayhair1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_braid_bun",
+   "name": "elvs_braid_bun_q1",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_braided_rows",
+   "name": "cornrowsofelv5",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.741,
+    0.6957,
+    0.7879
+   ]
+  },
+  {
+   "id": "elvs_daisy_hair",
+   "name": "elvs_daisyhair1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_grump_hair",
+   "name": "elvs_grumphair",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_hazel_hair",
+   "name": "elvs_hazel_hair",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_inverted_curly_bob",
+   "name": "elvs_inverted_curlybob1",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "elvs_island_princess_hair",
+   "name": "elvs_island_princess1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_katherine_hair",
+   "name": "elvs_katherinehair1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_keylth_hair",
+   "name": "elvs_keylth_hair_m1",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_lady_hippy_hair",
+   "name": "elvs_ladies_hippyhair1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_lara_hair",
+   "name": "elvs_laracroft_hair1a",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_maxwell_hair",
+   "name": "maxwell_hair_mh",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.611764705882,
+    0.611764705882,
+    0.611764705882
+   ]
+  },
+  {
+   "id": "elvs_micky_afro",
+   "name": "elvs_mickey_afro",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_short_daisy_hair",
+   "name": "elvs_short_daisyh1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_short_side_do",
+   "name": "elvs_thejournalist1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": false,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "elvs_that_80s_babe_hair",
+   "name": "elvs_that80sbabe_m1",
+   "license": "CC-BY",
+   "author": "",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "elvs_wavy_bob",
+   "name": "elvscurly_bob1",
+   "license": "CC-BY",
+   "author": "Elvaerwyn",
+   "tex": 1,
+   "alpha": false,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "elvs_witchy_lil_bob",
+   "name": "witchybob_elv2",
+   "license": "CC-BY",
+   "author": "Unknown",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "culturalibre_hair_11",
+   "name": "hair_01",
+   "license": "CC-BY",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.4,
+    0.4,
+    0.4
+   ]
+  },
+  {
+   "id": "culturalibre_hair_12",
+   "name": "hair_02",
+   "license": "CC-BY",
+   "author": "culturalibre License CC-BY",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "culturalibre_hair_13",
+   "name": "hair_03",
+   "license": "CC-BY",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.6,
+    0.6,
+    0.6
+   ]
+  },
+  {
+   "id": "culturalibre_hair_14",
+   "name": "hair_04",
+   "license": "CC-BY",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "culturalibre_hair_17",
+   "name": "hair_07",
+   "license": "CC-BY",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": false,
+   "color": [
+    0.5,
+    0.5,
+    0.5
+   ]
+  },
+  {
+   "id": "culturalibre_hair_18",
+   "name": "hair_08",
+   "license": "CC-BY",
+   "author": "culturalibre",
+   "tex": 1,
+   "alpha": false,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "grinsegold_wig_bow_tie",
+   "name": "wig_bow_tie",
+   "license": "CC-BY",
+   "author": "grinsegold",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.64,
+    0.64,
+    0.64
+   ]
+  },
+  {
+   "id": "grinsegold_wig_bun_blonde_braids",
+   "name": "Wig_bun_blonde",
+   "license": "CC-BY",
+   "author": "grinsegold",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "o4saken_chinesebob01",
+   "name": "o4saken_chinesebob01",
+   "license": "CC-BY",
+   "author": "O4saken",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "o4saken_curly01",
+   "name": "o4saken_curly01",
+   "license": "CC-BY",
+   "author": "04saken",
+   "tex": 1,
+   "alpha": true,
+   "ntex": 1,
+   "color": [
+    0.498039215686,
+    0.498039215686,
+    0.498039215686
+   ]
+  },
+  {
+   "id": "punkduck_alpha7_curly",
+   "name": "curly",
+   "license": "CC-BY",
+   "author": "Unknown, adaptation by punkduck",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "punkduck_alpha7_curly2",
+   "name": "curly2",
+   "license": "CC-BY",
+   "author": "Unknown, adaptation to MH1.1 by punkduck",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "id": "punkduck_alpha7_long",
+   "name": "long_alpha7",
+   "license": "CC-BY",
+   "author": "Unknown, adaptation by punkduck",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.329411764706,
+    0.133333333333,
+    0.0313725490196
+   ]
+  },
+  {
+   "id": "punkduck_alpha7_long2",
+   "name": "long2_alpha7",
+   "license": "CC-BY",
+   "author": "Unknown, adaptation by punkduck",
+   "tex": 1,
+   "alpha": true,
+   "color": [
+    0.529411764706,
+    0.333333333333,
+    0.243137254902
+   ]
+  }
+ ],
+ "brows": [
+  {
+   "id": "mindfront_eyebrows_01",
+   "name": "Mind_Eyebrows_01",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_02",
+   "name": "Mind_Eyebrows_02",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_03",
+   "name": "Mind_Eyebrows_03",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_04",
+   "name": "Mind_Eyebrows_04",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_05",
+   "name": "Mind_Eyebrows_05",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_06",
+   "name": "Mind_Eyebrows_06",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_07",
+   "name": "Mind_Eyebrows_07",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_08",
+   "name": "Mind_Eyebrows_08",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_09",
+   "name": "Mind_Eyebrows_09",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_10",
+   "name": "Mind_Eyebrows_10",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_11",
+   "name": "Mind_Eyebrows_11",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_12",
+   "name": "Mind_Eyebrows_12",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_13",
+   "name": "Mind_Eyebrows_13",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": "mindfront_eyebrows_14",
+   "name": "Mind_Eyebrows_14",
+   "license": "CC0",
+   "author": "Mindfront (Sweden)",
+   "color": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ]
+}

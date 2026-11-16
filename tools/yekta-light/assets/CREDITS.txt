@@ -6,3 +6,27 @@ Yekta Light (online) by YEKTA, yektapour.com
   TransformControls and the meshopt decoder (MIT, Arseny Kapoulkine).
 - Skeleton: "Human Skeleton Rigged" by Shachar (rig), model by momentum, BlendSwap, CC-BY 3.0.
   Converted to glTF, mirrored and re-mapped to Yekta Light's bone names; compressed with gltfpack.
+
+- Heads: ICT-FaceKit by USC Institute for Creative Technologies (MIT). Identity, 53 expression shapes, eyes, teeth.
+  Skin detail baked from MakeHuman system skins (CC0). Eye textures procedural.
+- Hair and eyebrows: MakeHuman community asset packs (makehumancommunity.org), fitted to the heads by Yekta Light:
+  CC-BY — 04saken: o4saken_curly01
+  CC-BY — Elvaerwyn: cornrowsofelv5, elv_50supdo1, elvs_adrienne_hair1, elvs_ashley_mayhair1, elvs_daisyhair1, elvs_island_princess1, elvs_katherinehair1, elvs_ladies_hippyhair1, elvs_short_daisyh1, elvs_thejournalist1, elvscurly_bob1, maxwell_hair_mh
+  CC-BY — MakeHuman community: elvs_braid_bun_q1, elvs_grumphair, elvs_hazel_hair, elvs_inverted_curlybob1, elvs_keylth_hair_m1, elvs_laracroft_hair1a, elvs_mickey_afro, elvs_that80sbabe_m1
+  CC-BY — O4saken: o4saken_chinesebob01
+  CC-BY — Unknown: witchybob_elv2
+  CC-BY — Unknown, adaptation by punkduck: curly, long2_alpha7, long_alpha7
+  CC-BY — Unknown, adaptation to MH1.1 by punkduck: curly2
+  CC-BY — culturalibre: hair_01, hair_03, hair_04, hair_07, hair_08
+  CC-BY — culturalibre License CC-BY: hair_02
+  CC-BY — grinsegold: Wig_bun_blonde, wig_bow_tie
+  CC0 — 04saken: o4saken_long01
+  CC0 — Elvaerwyn: rev_fr_braidbun1
+  CC0 — MHteam: mhair02
+  CC0 — MRT: Bob_Blunt, Bob_Blunt_Bangs, Bob_Curled_Under, Bob_Curled_Under_Bangs, Bob_Inverted, Bob_Inverted_bangs
+  CC0 — MakeHuman community: Braid01, afro01, bob01, bob02, hair1, long01, ponytail01, shaggy_green, short01, short02, short03, short04, short_messy, straight_bangs, strawberry_cloud
+  CC0 — Mindfront (Sweden): Mind_Eyebrows_01, Mind_Eyebrows_02, Mind_Eyebrows_03, Mind_Eyebrows_04, Mind_Eyebrows_05, Mind_Eyebrows_06, Mind_Eyebrows_07, Mind_Eyebrows_08, Mind_Eyebrows_09, Mind_Eyebrows_10, Mind_Eyebrows_11, Mind_Eyebrows_12, Mind_Eyebrows_13, Mind_Eyebrows_14
+  CC0 — Rehman Polanski: Hair_bun_brown
+  CC0 — Unknown: animehair, blondwithheadband, double_mhbraid, fhair01, frenchbraid1mh01, junglebookhair, unkempt_mhbraidfr
+  CC0 — culturalibre: hair_05, hair_06
+  CC0 — littleright: LITTLERIGHT_hair_BobCut
