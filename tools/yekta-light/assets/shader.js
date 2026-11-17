@@ -21,6 +21,7 @@ export function makeUniforms() {
 
 const PARS = /* glsl */`
 uniform vec3 uSkinC;
+uniform float uSkinMaskOn;
 uniform vec3 uL, uLc, uL2, uLc2, uUp, uAmb, uBnc, uRimC, uTint, uEnvC, uBase, uSpec, uSssC, uTexTint;
 uniform float uWrap, uBands, uSoft, uAmbInt, uBncInt, uRimInt, uRimExp, uTintAmt, uEnvCustom, uSpecInt, uExp, uNorm, uMetal, uEnvK, uSss, uTexMode, uVMode, uNotan, uIso, uShadowOn;
 float ylBand(float d, float k, float soft) {
@@ -46,7 +47,7 @@ const MAIN = /* glsl */`
   // the base color re-tints only the skin of the scan (clothes, hair and eyes keep their own color)
   vec3 tx = diffuseColor.rgb;
   float txs = tx.r + tx.g + tx.b;
-  float skin = (1.0 - smoothstep(0.05, 0.17, length(tx / max(txs, 1e-4) - uSkinC))) * smoothstep(0.03, 0.12, txs);
+  float skin = uSkinMaskOn * (1.0 - smoothstep(0.05, 0.17, length(tx / max(txs, 1e-4) - uSkinC))) * smoothstep(0.03, 0.12, txs);
   vec3 texC = tx * mix(vec3(1.0), uTexTint, skin);
   vec3 base = mix(uBase, texC, uTexMode);
   float rough = mix(0.5, roughnessFactor, uTexMode);
@@ -113,9 +114,9 @@ const FINISH = /* glsl */`
 `;
 
 // patch a MeshStandardMaterial: our lighting replaces the PBR lighting, our encoding replaces the output transform
-export function patchMaterial(mat, uniforms) {
+export function patchMaterial(mat, uniforms, own = {}) {
   mat.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, uniforms);
+    Object.assign(sh.uniforms, uniforms, { uSkinMaskOn: { value: 1 } }, own);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', '#include <common>\n' + PARS)
       .replace('#include <lights_fragment_begin>', MAIN)

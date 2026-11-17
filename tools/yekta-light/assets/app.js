@@ -8,6 +8,7 @@ import * as LM from './light.js';
 import { Rig, POSES, FINGERS, limitsOf, labelOf } from './rig.js';
 import { makeUniforms, patchMaterial } from './shader.js';
 import { Collider } from './collide.js';
+import { Head, EXPRESSIONS, CONTROLS, faceWeights, headUrl, partUrl, texUrl, thumbUrl, eyeUrl, catalogUrl } from './head.js';
 
 const $ = (id) => document.getElementById(id);
 const h = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
@@ -17,12 +18,16 @@ const MODELS = {
   woman: { file: 'models/woman.glb', label: 'Woman', fused: ['middle_r', 'ring_r', 'pinky_r'] },
   man: { file: 'models/man.glb', label: 'Man', fused: [] },
   skeleton: { file: 'models/skeleton.glb', label: 'Skeleton', fused: [], bone: true },
+  headF: { head: 'F', label: 'Head ♀' },
+  headM: { head: 'M', label: 'Head ♂' },
 };
 
 // ---------------- state, undo, persistence ----------------
 const KEY = 'yekta-light-3';
 let S = LM.defaultState();
 try { const saved = JSON.parse(localStorage.getItem(KEY) || 'null'); if (saved && saved.v === 3) S = Object.assign(S, saved.s); } catch (e) { /* storage unavailable */ }
+S.face = Object.assign({ expr: 'Neutral', amt: 1, mix: '', mixAmt: 0.5, look: [0, 0], blink: 0, custom: {}, asym: 0 }, S.face || {});
+S.heads = Object.assign({ F: { hair: 'ponytail01', brows: 'mindfront_eyebrows_04', hairCol: null, browCol: null, eye: 'brown' }, M: { hair: 'short02', brows: 'mindfront_eyebrows_07', hairCol: null, browCol: null, eye: 'brown' } }, S.heads || {});
 const undo = [], redo = [];
 let lastSnap = JSON.stringify(S);
 function commit() {
@@ -89,9 +94,31 @@ function texAverage(tex) {
 const FEET = ['LeftFoot', 'LeftToeBase', 'RightFoot', 'RightToeBase'];
 const lowest = (rig) => Math.min(...FEET.map((n) => rig.bones[n]).filter(Boolean).map((b) => b.getWorldPosition(new THREE.Vector3()).y));
 
+const loadGLTF = (url) => new Promise((res, rej) => loader.load(url, res, (e) => { if (e.total) $('lbar').style.width = Math.round((e.loaded / e.total) * 100) + '%'; }, rej));
+const texLoader = new THREE.TextureLoader();
+const loadTex = (url, srgb = true) => new Promise((res, rej) => texLoader.load(url, (t) => { t.flipY = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; res(t); }, undefined, rej));
+let catalog = null;
+const getCatalog = async () => catalog || (catalog = await (await fetch(catalogUrl)).json());
+async function loadHead(name, def) {
+  const H = new Head(await loadGLTF(headUrl(def.head)));
+  for (const o of H.meshes) {
+    const src = o.material, n = src.name;
+    if (/EyeBlend|LacrimalFluid/.test(n)) { o.visible = false; continue; }
+    if (n === 'M_EyeOcclusion') { o.material = new THREE.MeshBasicMaterial({ color: 0x2a1610, transparent: true, opacity: 0.45, depthWrite: false }); o.castShadow = false; o.renderOrder = 2; continue; }
+    const m = new THREE.MeshStandardMaterial({ map: src.map, color: src.color, vertexColors: !!o.geometry.attributes.color, transparent: n === 'M_EyeLashes', opacity: src.opacity, side: n === 'M_EyeLashes' ? THREE.DoubleSide : THREE.FrontSide, depthWrite: n !== 'M_EyeLashes' });
+    m.name = n;
+    const skin = n === 'M_Face' || n === 'M_BackHead';
+    o.material = patchMaterial(m, U, skin ? {} : { uSkinMaskOn: { value: 0 }, uTexMode: { value: 1 } });
+    if (n === 'M_EyeLashes') o.castShadow = false;
+  }
+  const texAvg = H.skin.material.map ? texAverage(H.skin.material.map) : [0.6, 0.4, 0.3];
+  cache[name] = { root: H.root, rig: null, head: def.head, headObj: H, mesh: H.root, col: null, hasMap: true, height: 0.3, texAvg, center: H.center, parts: {} };
+  return cache[name];
+}
 async function loadModel(name) {
   if (cache[name]) return cache[name];
   const def = MODELS[name];
+  if (def.head) return loadHead(name, def);
   const gltf = await new Promise((res, rej) => loader.load(BASE + def.file, res, (e) => { if (e.total) $('lbar').style.width = Math.round((e.loaded / e.total) * 100) + '%'; }, rej));
   const root = gltf.scene;
   let mesh = null, texAvg = [0.5, 0.4, 0.35];
@@ -113,8 +140,11 @@ async function loadModel(name) {
 }
 const BONE_MAT = { base: [0.88, 0.84, 0.75], spec: [1, 1, 1], specInt: 0.2, gloss: 0.35, metal: 0, sss: 0.2, sssColor: [1, 0.55, 0.42] };
 const SKIN_MAT = LM.defaultState().mat;
+const HEAD_MAT = { base: [0.86, 0.69, 0.6], spec: [1, 1, 1], specInt: 0.22, gloss: 0.4, metal: 0, sss: 0.35, sssColor: [1, 0.4, 0.3] };
 function matForModel(name) {
   const isBone = !!MODELS[name].bone, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  if (MODELS[name].head && same(S.mat, SKIN_MAT)) { S.mat = clone(HEAD_MAT); return; }
+  if (!MODELS[name].head && same(S.mat, HEAD_MAT)) { S.mat = clone(SKIN_MAT); return; }
   if (isBone && !same(S.mat, BONE_MAT)) { S.skinMat = clone(S.mat); S.mat = clone(BONE_MAT); }
   else if (!isBone && same(S.mat, BONE_MAT)) S.mat = clone(S.skinMat || SKIN_MAT);
 }
@@ -122,11 +152,16 @@ async function showModel(name) {
   matForModel(name);
   $('loading').classList.remove('done'); $('lbar').style.width = '0';
   const M = await loadModel(name);
+  const kindChanged = !cur || !!cur.head !== !!M.head;
   if (cur) scene.remove(cur.root);
   cur = M; scene.add(M.root);
   buildHandles();
+  if (M.head) { if (tool !== 'pick' && tool !== 'zoom') setTool('pick'); await applyHeadParts(); }
   applyPose();
+  updateTabs();
+  refreshUI();
   $('loading').classList.add('done');
+  if (kindChanged) setView('3/4', true);
   dirty();
 }
 
@@ -150,15 +185,78 @@ function applyLight() {
   U.uVMode.value = { off: 0, gray: 1, notan: 2, v3: 3, v5: 4 }[S.valueMode] || 0;
   U.uNotan.value = S.notan; U.uIso.value = S.iso ? S.isoLuma : -1;
   U.uShadowOn.value = S.shadows ? 1 : 0;
-  key.castShadow = !!S.shadows; floor.visible = !!S.floor && !!S.shadows;
+  key.castShadow = !!S.shadows; floor.visible = !!S.floor && !!S.shadows && !(cur && cur.head);
   key.shadow.radius = 1 + S.shadowSoft * 7;
   floor.material.opacity = 0.25 + 0.4 * (1 - S.ambient.intensity * 0.6);
   const bg = { dark: [0.06, 0.06, 0.065], mid: [0.36, 0.36, 0.36], light: [0.8, 0.79, 0.77], custom: S.backdropColor }[S.backdrop] || [0.06, 0.06, 0.065];
   scene.background = new THREE.Color().setRGB(...bg, THREE.SRGBColorSpace);
   dirty();
 }
+// ---------------- heads: expression, hair, eyebrows, eyes ----------------
+const HAIR_COLORS = [['Original', null], ['Black', [0.05, 0.045, 0.04]], ['Dark brown', [0.15, 0.09, 0.05]], ['Brown', [0.32, 0.19, 0.1]], ['Auburn', [0.45, 0.16, 0.07]], ['Copper', [0.62, 0.3, 0.12]], ['Blonde', [0.78, 0.62, 0.38]], ['Platinum', [0.88, 0.84, 0.76]], ['Gray', [0.55, 0.55, 0.55]]];
+const EYE_COLORS = [['brown', '#5b3a1f'], ['darkbrown', '#33200f'], ['hazel', '#6b5428'], ['green', '#525c3e'], ['blue', '#4d6b8c'], ['gray', '#6b7279']];
+function imgAvg(img) {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.drawImage(img, 0, 0, 64, 64);
+    const d = g.getImageData(0, 0, 64, 64).data, s = [0, 0, 0]; let n = 0;
+    for (let i = 0; i < d.length; i += 4) { const a = d[i + 3] / 255; if (a < 0.4) continue; s[0] += LM.toLin(d[i] / 255) * a; s[1] += LM.toLin(d[i + 1] / 255) * a; s[2] += LM.toLin(d[i + 2] / 255) * a; n += a; }
+    return n ? s.map((v) => v / n) : [0.2, 0.15, 0.1];
+  } catch (e) { return [0.2, 0.15, 0.1]; }
+}
+function tintPart(m, avg, target) {
+  if (!target) { m.color.setRGB(1, 1, 1); return; }
+  const t = LM.lin3(target); m.color.setRGB(...t.map((v, i) => Math.min(6, v / Math.max(0.01, avg[i]))));
+}
+async function loadPart(kind, id) {
+  const g = cur.head, cat = await getCatalog(), ent = (cat[kind] || []).find((e) => e.id === id);
+  if (!ent) return null;
+  const gl = await loadGLTF(partUrl(kind, id, g));
+  let mesh = null; gl.scene.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
+  mesh.removeFromParent(); mesh.position.set(0, 0, 0); mesh.rotation.set(0, 0, 0); mesh.scale.set(1, 1, 1);
+  const m = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide });
+  let avg = LM.lin3(ent.color || [0.1, 0.07, 0.05]);
+  if (ent.tex) { m.map = await loadTex(texUrl(id)); avg = imgAvg(m.map.image); if (ent.alpha) { m.alphaTest = 0.45; m.alphaToCoverage = true; } }
+  else m.color.setRGB(...avg);
+  if (ent.ntex) { try { m.normalMap = await loadTex(texUrl(id, true), false); } catch (e) { /* optional */ } }
+  mesh.material = patchMaterial(m, U, { uSkinMaskOn: { value: 0 }, uTexMode: { value: 1 } });
+  mesh.userData = { kind, id, avg, hasTex: !!ent.tex };
+  return mesh;
+}
+async function applyHeadParts() {
+  if (!cur || !cur.head) return;
+  const hs = S.heads[cur.head], H = cur.headObj;
+  for (const kind of ['hair', 'brows']) {
+    const want = hs[kind] || '';
+    if (cur.parts[kind] !== want) {
+      cur.parts[kind] = want;
+      const mesh = want ? await loadPart(kind, want) : null;
+      if (cur.parts[kind] !== want) continue; // a newer choice arrived meanwhile
+      H.attach(kind, mesh);
+    }
+  }
+  const hm = H.attached.hair && H.attached.hair.mesh, bm = H.attached.brows && H.attached.brows.mesh;
+  if (hm) { const ud = hm.userData; if (ud.hasTex) tintPart(hm.material, ud.avg, hs.hairCol); else hm.material.color.setRGB(...(hs.hairCol ? LM.lin3(hs.hairCol) : ud.avg)); }
+  {
+    const hairLin = hm ? (hs.hairCol ? LM.lin3(hs.hairCol) : hm.userData.avg) : null;
+    const key = (hm ? hm.userData.id : '') + JSON.stringify(hs.hairCol);
+    void hairLin; void key; // scalp tinting disabled: vertex resolution is too coarse for alpha-carded hair
+  }
+  if (bm) { const c = hs.browCol || (hs.hairCol ? hs.hairCol.map((v) => v * 0.8) : [0.09, 0.065, 0.05]); bm.material.color.setRGB(...LM.lin3(c)); }
+  if (cur.eyeLoaded !== hs.eye) {
+    cur.eyeLoaded = hs.eye;
+    const t = await loadTex(eyeUrl(hs.eye));
+    for (const o of H.meshes) if (/Sclera/.test(o.material.name)) {
+      const old = o.material.map, nt = t.clone();
+      if (old) { nt.offset.copy(old.offset); nt.repeat.copy(old.repeat); nt.rotation = old.rotation; nt.center.copy(old.center); }
+      nt.needsUpdate = true; o.material.map = nt; o.material.needsUpdate = true;
+    }
+  }
+  applyFace();
+}
+function applyFace() { if (cur && cur.head) { cur.headObj.setWeights(faceWeights(S.face)); dirty(); } }
 function applyPose() {
   if (!cur) return;
+  if (cur.head) { applyFace(); placeHandles(); return; }
   const R = cur.rig, P = S.pose;
   cur.root.position.set(0, 0, 0);
   R.apply(P);
@@ -173,7 +271,7 @@ function applyLens() {
   camera.fov = 2 * Math.atan(12 / S.lens) * 180 / Math.PI;
   camera.updateProjectionMatrix(); dirty();
 }
-function applyAll() { applyLight(); applyLens(); if (cur && cur !== cache[S.model]) showModel(S.model); else applyPose(); }
+function applyAll() { applyLight(); applyLens(); if (cur && cur !== cache[S.model]) showModel(S.model); else { if (cur && cur.head) applyHeadParts(); applyPose(); } }
 
 // camera views
 const VIEWS = { Front: [0, 0.03], '3/4': [0.62, 0.06], Profile: [1.5708, 0.02], Back: [Math.PI, 0.05], High: [0.45, 0.55], Low: [0.35, -0.3], Face: [0.5, 0.05, 'face'] };
@@ -181,7 +279,9 @@ function setView(name, inst) {
   const [yaw, pitch, mode] = VIEWS[name];
   const H = cur ? cur.height : 1.75;
   let tgt = new THREE.Vector3(0, H * 0.53, 0), dist = (H * 0.62) / Math.tan((camera.fov * Math.PI) / 360);
-  if (mode === 'face' && cur) { tgt = cur.rig.pos('head').add(new THREE.Vector3(0, 0.07, 0)); dist = 0.34 / Math.tan((camera.fov * Math.PI) / 360); }
+  if (cur && cur.head) { tgt = cur.center.clone(); dist = (mode === 'face' ? 0.15 : 0.2) / Math.tan((camera.fov * Math.PI) / 360); }
+  else if (mode === 'face' && cur) { tgt = cur.rig.pos('head').add(new THREE.Vector3(0, 0.07, 0)); dist = 0.34 / Math.tan((camera.fov * Math.PI) / 360); }
+  if (camera.aspect < 0.85) { dist *= 1.22; tgt.y -= cur && cur.head ? 0.012 : 0.08; }
   const to = tgt.clone().add(new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(dist));
   if (inst) { controls.target.copy(tgt); camera.position.copy(to); controls.update(); dirty(); return; }
   const t0 = controls.target.clone(), p0 = camera.position.clone(), st = performance.now();
@@ -206,7 +306,7 @@ const proxy = new THREE.Object3D(); scene.add(proxy);
 const gizmo = new TransformControls(camera, renderer.domElement);
 gizmo.setSpace('world'); gizmo.setSize(0.7);
 scene.add(gizmo);
-const rigVisible = () => tool === 'rotate' || tool === 'move';
+const rigVisible = () => (tool === 'rotate' || tool === 'move') && !!(cur && cur.rig);
 let drag0 = null;
 gizmo.addEventListener('dragging-changed', (e) => {
   controls.enabled = !e.value;
@@ -242,7 +342,7 @@ gizmo.addEventListener('objectChange', () => {
 gizmo.addEventListener('change', () => dirty());
 function buildHandles() {
   handles.clear();
-  if (!cur) return;
+  if (!cur || !cur.rig) return;
   for (const k of cur.rig.keys) {
     const m = new THREE.Mesh(hGeo, hMat); m.userData.key = k; m.renderOrder = 998;
     m.userData.f = /^(thumb|index|middle|ring|pinky)_/.test(k) ? 0.0024 : /toe/.test(k) ? 0.003 : /head|hips|chest|spine|neck/.test(k) ? 0.005 : 0.0042; // constant size on screen
@@ -253,7 +353,7 @@ function buildHandles() {
 }
 const tv = new THREE.Vector3();
 function placeHandles() {
-  if (!cur) return;
+  if (!cur || !cur.rig) { handles.visible = false; gizmo.detach(); placeVolumes(); return; }
   const pins = S.pose.pins || {};
   handles.children.forEach((m) => { if (!m.userData.key) return; m.position.copy(cur.rig.pos(m.userData.key)); m.material = m.userData.key === selJoint ? hMatOn : pins[m.userData.key] ? hMatPin : hMat; });
   const pa = boneLines.geometry.getAttribute('position');
@@ -336,7 +436,7 @@ function frameOn(center, radius) {
   step();
 }
 const fitFigure = () => { if (cur) { const bx = new THREE.Box3().setFromObject(cur.mesh); frameOn(bx.getCenter(new THREE.Vector3()), cur.height * 0.6); } };
-const focusSel = () => { if (cur) frameOn(cur.rig.pos(selJoint), /^(thumb|index|middle|ring|pinky)_|wrist/.test(selJoint) ? 0.12 : /head|neck|toe|ankle/.test(selJoint) ? 0.22 : 0.45); };
+const focusSel = () => { if (cur && cur.head) { frameOn(cur.center, 0.12); return; } if (cur) frameOn(cur.rig.pos(selJoint), /^(thumb|index|middle|ring|pinky)_|wrist/.test(selJoint) ? 0.12 : /head|neck|toe|ankle/.test(selJoint) ? 0.22 : 0.45); };
 
 // ---------------- render loop + picking ----------------
 let needs = true, pendingPick = null, hoverAt = null;
@@ -536,11 +636,18 @@ const TABS = ['Light', 'Surface', 'Pose', 'View'];
 const panes = {};
 const tabs = $('tabs'), scroll = $('scroll');
 let tab = 'Light';
-TABS.forEach((t) => {
+['Light', 'Surface', 'Pose', 'Face', 'View'].forEach((t) => {
   const b = h('button', null, t); b.addEventListener('click', () => setTab(t)); tabs.append(b);
   panes[t] = h('div', 'pane'); scroll.append(panes[t]);
 });
+function updateTabs() {
+  const isHead = !!(cur && cur.head);
+  [...tabs.children].forEach((b) => { if (b.textContent === 'Pose') b.style.display = isHead ? 'none' : ''; if (b.textContent === 'Face') b.style.display = isHead ? '' : 'none'; });
+  if (isHead && tab === 'Pose') setTab('Face'); else if (!isHead && tab === 'Face') setTab('Pose');
+}
 function setTab(t) {
+  if (cur && cur.head && t === 'Pose') t = 'Face';
+  if (cur && !cur.head && t === 'Face') t = 'Pose';
   tab = t; [...tabs.children].forEach((b) => b.classList.toggle('on', b.textContent === t));
   Object.entries(panes).forEach(([k, p]) => p.classList.toggle('on', k === t));
   poseTab = t === 'Pose';
@@ -633,6 +740,14 @@ const upd = (f) => (v) => { f(v); applyLight(); refreshFamilies(); };
     applyLight(); commit(); refreshUI();
   });
   H3(P, 'Surface');
+  {
+    const sw = h('div', 'swatches'); sw.style.margin = '2px 0 10px'; P.append(sw);
+    [['Porcelain', [0.96, 0.82, 0.74]], ['Fair', [0.92, 0.74, 0.63]], ['Medium', [0.84, 0.63, 0.5]], ['Olive', [0.74, 0.56, 0.4]], ['Tan', [0.66, 0.46, 0.32]], ['Brown', [0.5, 0.33, 0.22]], ['Deep', [0.33, 0.21, 0.14]]].forEach(([n, c]) => {
+      const bt = h('button', 'swb'); bt.title = n + ' skin'; bt.style.background = LM.hex(c);
+      bt.addEventListener('click', () => { S.mat.base = c.slice(); if (!MODELS[S.model].bone) S.surface = 'texture'; applyLight(); refreshFamilies(); commit(); refreshUI(); });
+      sw.append(bt); onRefresh(() => bt.classList.toggle('on', JSON.stringify(S.mat.base) === JSON.stringify(c)));
+    });
+  }
   seg(P, [{ label: 'Skin texture', value: 'texture', title: 'Scanned skin detail, tinted by the base color' }, { label: 'Flat color', value: 'color', title: 'One clean color: best for value studies' }], (v) => S.surface === v, (v) => { S.surface = v; applyLight(); commit(); });
   colorIn(P, 'Base color', () => S.mat.base, upd((c) => { S.mat.base = c; }), (row) => {
     const b = h('button', 'btn', 'From texture'); b.title = 'Use the scan\'s own skin color'; row.append(b);
@@ -747,6 +862,102 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
   P.append(h('div', 'note', 'Hand sliders curl every finger at once; each finger bone can also be posed on its own from the hand maps or the viewport. Values are mirrored, so the same numbers on both sides give a symmetric pose. Shift-drag a slider for fine control, double-click to reset.'));
 }
 
+// ---------------- Face pane (heads) ----------------
+{
+  const P = panes.Face;
+  const F = () => S.face, HS = () => S.heads[cur && cur.head ? cur.head : 'F'];
+  const faceUp = (fn) => (v) => { fn(v); applyFace(); };
+  H3(P, 'Expression');
+  chips(P, Object.keys(EXPRESSIONS), (v) => F().expr === v, (v) => { F().expr = v; if (F().amt === 0) F().amt = 1; applyFace(); commit(); });
+  slider(P, 'Intensity', () => F().amt, faceUp((v) => { F().amt = v; }), 0, 1.5, { def: 1 });
+  {
+    const row = h('div', 'row'), lb = h('label', null, 'Blend with'), sel = h('select', 'sel');
+    sel.append(new Option('—', '')); Object.keys(EXPRESSIONS).filter((k) => k !== 'Neutral').forEach((k) => sel.append(new Option(k, k)));
+    sel.addEventListener('change', () => { F().mix = sel.value; applyFace(); commit(); refreshUI(); });
+    row.append(lb, sel); P.append(row);
+    onRefresh(() => { sel.value = F().mix || ''; });
+  }
+  slider(P, 'Blend amount', () => F().mixAmt, faceUp((v) => { F().mixAmt = v; }), 0, 1, { def: 0.5 });
+
+  H3(P, 'Eyes');
+  const ew = h('div', 'lightwrap'); P.append(ew);
+  const pad = h('canvas', 'lookpad'); pad.width = pad.height = 240; pad.setAttribute('aria-label', 'Eye direction: drag'); ew.append(pad);
+  const side = h('div', 'side'); ew.append(side);
+  side.append(h('div', 'note', 'Drag to set where the eyes look. Double-click to look straight ahead.'));
+  const g = pad.getContext('2d');
+  const drawPad = () => {
+    const n = pad.width; g.clearRect(0, 0, n, n);
+    g.fillStyle = '#1b1b1d'; g.beginPath(); g.arc(n / 2, n / 2, n / 2 - 2, 0, 7); g.fill();
+    g.strokeStyle = '#2b2b2f'; g.lineWidth = 2; g.beginPath(); g.moveTo(n / 2, 8); g.lineTo(n / 2, n - 8); g.moveTo(8, n / 2); g.lineTo(n - 8, n / 2); g.stroke();
+    const [lx, ly] = F().look; const x = n / 2 + lx * (n / 2 - 22), y = n / 2 - ly * (n / 2 - 22);
+    g.fillStyle = '#f3b44a'; g.beginPath(); g.arc(x, y, 14, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill();
+  };
+  pad.addEventListener('pointerdown', (e) => {
+    pad.setPointerCapture(e.pointerId);
+    const mv = (ev) => { const r = pad.getBoundingClientRect(), R = r.width / 2; let x = (ev.clientX - r.left - R) / (R - 11), y = -(ev.clientY - r.top - R) / (R - 11); const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } F().look = [Math.round(x * 100) / 100, Math.round(y * 100) / 100]; applyFace(); drawPad(); };
+    mv(e); const up = () => { pad.removeEventListener('pointermove', mv); pad.removeEventListener('pointerup', up); commit(); };
+    pad.addEventListener('pointermove', mv); pad.addEventListener('pointerup', up);
+  });
+  pad.addEventListener('dblclick', () => { F().look = [0, 0]; applyFace(); drawPad(); commit(); });
+  onRefresh(drawPad);
+  slider(side, 'Blink', () => F().blink, faceUp((v) => { F().blink = v; }), 0, 1, { def: 0 });
+  const eyes = h('div', 'swatches'); side.append(eyes);
+  EYE_COLORS.forEach(([k, c]) => { const b = h('button', 'swb'); b.style.background = c; b.title = k; b.addEventListener('click', () => { HS().eye = k; applyHeadParts(); commit(); refreshUI(); }); eyes.append(b); onRefresh(() => b.classList.toggle('on', HS().eye === k)); });
+
+  const gallery = (kind, title) => {
+    const head = H3(P, title); const cnt = h('span', 'r'); head.append(cnt);
+    if (kind === 'hair') {
+      const sw = h('div', 'swatches'); P.append(sw);
+      HAIR_COLORS.forEach(([n, c]) => { const b = h('button', 'swb'); b.title = n; if (c) b.style.background = LM.hex(c); else { b.textContent = 'A'; b.classList.add('orig'); } b.addEventListener('click', () => { HS().hairCol = c; applyHeadParts(); commit(); refreshUI(); }); sw.append(b); onRefresh(() => b.classList.toggle('on', JSON.stringify(HS().hairCol) === JSON.stringify(c))); });
+      const ci = h('input'); ci.type = 'color'; ci.title = 'Custom hair color'; sw.append(ci);
+      ci.addEventListener('input', () => { HS().hairCol = LM.fromHex(ci.value); applyHeadParts(); });
+      ci.addEventListener('change', commit);
+    } else {
+      const sw = h('div', 'swatches'); P.append(sw);
+      [['Match hair', null], ['Black', [0.05, 0.045, 0.04]], ['Dark brown', [0.12, 0.08, 0.05]], ['Brown', [0.28, 0.17, 0.1]], ['Blonde', [0.6, 0.48, 0.32]], ['Gray', [0.5, 0.5, 0.5]]].forEach(([n, c]) => { const b = h('button', 'swb'); b.title = n; if (c) b.style.background = LM.hex(c); else { b.textContent = '='; b.classList.add('orig'); } b.addEventListener('click', () => { HS().browCol = c; applyHeadParts(); commit(); refreshUI(); }); sw.append(b); onRefresh(() => b.classList.toggle('on', JSON.stringify(HS().browCol) === JSON.stringify(c))); });
+    }
+    const grid = h('div', 'thumbs'); P.append(grid);
+    const ORDER = kind === 'hair' ? {
+      F: ['ponytail01', 'rehmanpolanski_hair_bun_brown', 'elvs_50s_updo', 'long01', 'toigo_curled_under_bob', 'toigo_blunt_bob', 'toigo_blunt_bob_with_bangs', 'toigo_inverted_bob', 'toigo_curled_under_bob_with_bangs', 'toigo_inverted_bob_with_bangs', 'elvs_hazel_hair', 'elvs_adrienne_hair', 'elvs_ashley_may_hair', 'elvs_daisy_hair', 'elvs_keylth_hair', 'elvs_katherine_hair', 'elvs_lady_hippy_hair', 'elvs_inverted_curly_bob', 'elvs_wavy_bob', 'bob01', 'bob02', 'braid01', 'elvs_braid_bun', 'elvs_french_braid_variation', 'elvs_double_mh_braid', 'elvs_unkempt_french_braid', 'culturalibre_hair_01', 'o4saken_long01', 'o4saken_curly01', 'punkduck_alpha7_long', 'punkduck_alpha7_long2', 'punkduck_alpha7_curly', 'punkduck_alpha7_curly2', 'elvs_short_daisy_hair', 'littleright_bobcut_hair', 'elvs_island_princess_hair'],
+      M: ['short02', 'short04', 'short01', 'short03', 'culturalibre_hair_14', 'elvs_grump_hair', 'culturalibre_hair_02', 'culturalibre_hair_05', 'elvs_short_side_do', 'elvs_maxwell_hair', 'afro01', 'elvs_micky_afro', 'cortu_short_messy_hair', 'faydaen_hair_1', 'sonntag78_junglebook_hair', 'o4saken_long01', 'long01', 'ponytail01'],
+    } : { F: [], M: [] };
+    const LAST = ['learning_anime_hair', 'culturalibre_hair_06', 'cortu_shaggy_green_hair', 'cortu_strawberry_cloud_hair', 'elvs_reverse_french_braid_bun', 'culturalibre_hair_11', 'culturalibre_hair_12', 'elvs_witchy_lil_bob'];
+    const btns = new Map(); let orderedFor = null;
+    const reorder = () => {
+      const g = cur && cur.head ? cur.head : 'F'; if (orderedFor === g || !btns.size) return; orderedFor = g;
+      const pref = ORDER[g], rank = (id) => (id === '' ? -1 : pref.indexOf(id) >= 0 ? pref.indexOf(id) : LAST.indexOf(id) >= 0 ? 1000 + LAST.indexOf(id) : 500);
+      [...btns.keys()].sort((a, c) => rank(a) - rank(c)).forEach((id) => grid.append(btns.get(id)));
+    };
+    onRefresh(reorder);
+    getCatalog().then((cat) => {
+      const items = [{ id: '', name: 'None' }].concat(cat[kind] || []);
+      cnt.textContent = `${items.length - 1} styles`;
+      items.forEach((it) => {
+        const b = h('button', 'thumb'); b.title = it.name + (it.author ? ` — ${it.author}` : '');
+        if (it.id) { const im = h('img'); im.loading = 'lazy'; im.alt = it.name; im.src = thumbUrl(it.id); im.onerror = () => { im.remove(); b.textContent = it.name; }; b.append(im); } else b.textContent = 'None';
+        b.addEventListener('click', async () => { HS()[kind] = it.id; $('loading').classList.remove('done'); await applyHeadParts(); $('loading').classList.add('done'); commit(); refreshUI(); });
+        grid.append(b); btns.set(it.id, b);
+        onRefresh(() => b.classList.toggle('on', (HS()[kind] || '') === it.id));
+      });
+      orderedFor = null; reorder();
+    }).catch(() => { cnt.textContent = 'unavailable'; });
+  };
+  gallery('hair', 'Hair');
+  gallery('brows', 'Eyebrows');
+
+  const det = h('details', 'fine'); const sm = h('summary', null, 'Fine controls'); det.append(sm); P.append(det);
+  slider(det, 'Asymmetry', () => F().asym, faceUp((v) => { F().asym = v; }), -1, 1, { def: 0, zero: 0 });
+  det.append(h('div', 'note', 'Negative = stronger on the right side of the face, positive = on the left. Values add to the expression.'));
+  for (const [grp, items] of CONTROLS) {
+    det.append(h('div', 'subh', grp));
+    for (const [label, key] of items) slider(det, label, () => (F().custom || {})[key] || 0, faceUp((v) => { F().custom = F().custom || {}; F().custom[key] = v; }), -0.5, 1, { def: 0, zero: 0 });
+  }
+  const tb = h('div', 'chips'); tb.style.marginTop = '14px'; P.append(tb);
+  const rst = h('button', 'chip', 'Reset face'); tb.append(rst);
+  rst.addEventListener('click', () => { S.face = { expr: 'Neutral', amt: 1, mix: '', mixAmt: 0.5, look: [0, 0], blink: 0, custom: {}, asym: 0 }; applyFace(); commit(); refreshUI(); });
+  P.append(h('div', 'note', 'Heads: ICT-FaceKit (USC ICT, MIT). Hair and eyebrows: MakeHuman community assets (CC0 / CC-BY, authors in each style’s tooltip). Shortcut: B = blink.'));
+}
+
 // ---------------- View pane ----------------
 {
   const P = panes.View;
@@ -827,6 +1038,7 @@ addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (k === 'v') { const m = ['off', 'gray', 'notan', 'v3', 'v5']; S.valueMode = m[(m.indexOf(S.valueMode) + 1) % m.length]; applyLight(); refreshFamilies(); refreshUI(); commit(); }
   else if (k >= '1' && k <= '4') setTab(TABS[+k - 1]);
+  else if (k === 'b' && cur && cur.head) { S.face.blink = S.face.blink > 0.5 ? 0 : 1; applyFace(); refreshUI(); commit(); }
   else if (k === 'f') fitFigure();
   else if (k === '.') focusSel();
   else if (k === 'e') setTool('rotate');
