@@ -113,39 +113,66 @@ export class Head {
     this.follow(slot);
   }
   // darken / tint the scalp under the hair so the hairline reads as hair, not as a hard edge
-  scalp(hairMesh, hairLin, skinLin) {
-    for (const p of this.parts) {
-      const ca = p.mesh.geometry.attributes.color; if (!ca) continue;
-      if (!p.col0) { p.col0 = new Float32Array(ca.count * 3); for (let i = 0; i < ca.count; i++) { p.col0[i * 3] = ca.getX(i); p.col0[i * 3 + 1] = ca.getY(i); p.col0[i * 3 + 2] = ca.getZ(i); } }
-      for (let i = 0; i < ca.count; i++) ca.setXYZ(i, p.col0[i * 3], p.col0[i * 3 + 1], p.col0[i * 3 + 2]);
-      ca.needsUpdate = true;
-    }
-    if (!hairMesh) return;
-    const hp = hairMesh.geometry.attributes.position.array, R = 0.008, cs = R, grid = new Map(), key = (x, y, z) => `${Math.floor(x / cs)},${Math.floor(y / cs)},${Math.floor(z / cs)}`;
-    for (let i = 0; i < hp.length; i += 3) { const k = key(hp[i], hp[i + 1], hp[i + 2]); let a = grid.get(k); if (!a) grid.set(k, (a = [])); if (a.length < 12) a.push(i); }
-    const tgt = [0, 1, 2].map((c) => Math.min(1, (hairLin[c] * 0.75) / Math.max(0.02, skinLin[c])));
-    for (const p of this.parts) {
-      const ca = p.mesh.geometry.attributes.color; if (!ca) continue;
-      const pos = p.pos, na = p.mesh.geometry.attributes.normal;
-      for (let i = 0; i < pos.length / 3; i++) {
-        const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2], gx = Math.floor(x / cs), gy = Math.floor(y / cs), gz = Math.floor(z / cs);
+  // Scalp cap: a hair-coloured layer on the skin under the hair (fills gaps between hair cards).
+  // Coverage per skin vertex = hair present just above it; smoothed over the skin, soft (dithered) edge.
+  buildCap(hairMesh) {
+    const res = { geo: null };
+    if (!hairMesh) return null;
+    const hp = hairMesh.geometry.attributes.position.array, cs = 0.006, grid = new Map(), key = (x, y, z) => `${Math.floor(x / cs)},${Math.floor(y / cs)},${Math.floor(z / cs)}`;
+    for (let i = 0; i < hp.length; i += 3) { const k = key(hp[i], hp[i + 1], hp[i + 2]); let a = grid.get(k); if (!a) grid.set(k, (a = [])); if (a.length < 24) a.push(i); }
+    const parts = this.parts, outPos = [], outIdx = [], outA = [], outSrc = [];
+    const scl = this.meshes.filter((m) => /Sclera/.test(m.material.name)), eb = new THREE.Box3(); scl.forEach((m) => eb.expandByObject(m));
+    const eyeY = eb.getCenter(new THREE.Vector3()).y, cz = this.center.z;
+    for (let pi = 0; pi < parts.length; pi++) {
+      const p = parts[pi], g = p.mesh.geometry, pos = p.pos, na = g.attributes.normal, n = pos.length / 3;
+      const cov = new Float32Array(n), allow = new Uint8Array(n);
+      for (let i = 0; i < n; i++) {
+        const x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2];
         let nx = na.getX(i), ny = na.getY(i), nz = na.getZ(i); const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
-        let bt = Infinity;
-        // only hair that sits ABOVE this skin point (along its normal) covers it
-        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+        const gx = Math.floor(x / cs), gy = Math.floor(y / cs), gz = Math.floor(z / cs); let hit = 0;
+        for (let dx = -1; dx <= 1 && !hit; dx++) for (let dy = -1; dy <= 1 && !hit; dy++) for (let dz = -1; dz <= 1 && !hit; dz++) {
           const a = grid.get(`${gx + dx},${gy + dy},${gz + dz}`); if (!a) continue;
-          for (const j of a) {
-            const ox = hp[j] - x, oy = hp[j + 1] - y, oz = hp[j + 2] - z, up = ox * nx + oy * ny + oz * nz;
-            if (up < 0.0004) continue;
-            const t2 = ox * ox + oy * oy + oz * oz - up * up; if (t2 < bt) bt = t2;
-          }
+          for (const j of a) { const ox = hp[j] - x, oy = hp[j + 1] - y, oz = hp[j + 2] - z, up = ox * nx + oy * ny + oz * nz; if (up > -0.001 && up < 0.03 && ox * ox + oy * oy + oz * oz - up * up < 0.0045 * 0.0045) { hit = 1; break; } }
         }
-        const TR = 0.0035; if (bt >= TR * TR) continue;
-        const cov = Math.min(1, (1 - Math.sqrt(bt) / TR) * 2) * 0.85;
-        ca.setXYZ(i, p.col0[i * 3] * (1 - cov) + tgt[0] * cov, p.col0[i * 3 + 1] * (1 - cov) + tgt[1] * cov, p.col0[i * 3 + 2] * (1 - cov) + tgt[2] * cov);
+        // scalp only: above the ears on the sides, lower only at the back of the head
+        const ok = y > eyeY + 0.03 || (z < cz - 0.035 && y > eyeY - 0.05);
+        cov[i] = hit && ok ? 1 : 0; allow[i] = ok ? 1 : 0;
       }
-      ca.needsUpdate = true;
+      // morphological closing over mesh adjacency: fills holes in the hair without growing past the hairline
+      const idx = g.index.array, nbS = new Float32Array(n), nbC = new Float32Array(n);
+      const adj = Array.from({ length: n }, () => []);
+      for (let t = 0; t < idx.length; t += 3) for (let e = 0; e < 3; e++) { const a = idx[t + e], bb = idx[t + (e + 1) % 3]; adj[a].push(bb); adj[bb].push(a); }
+      const step = (src, dil) => { const o = new Float32Array(n); for (let i = 0; i < n; i++) { let v = src[i]; for (const j of adj[i]) v = dil ? Math.max(v, src[j]) : Math.min(v, src[j]); o[i] = v; } return o; };
+      let c = cov; for (let it = 0; it < 7; it++) c = step(c, true); for (let it = 0; it < 7; it++) c = step(c, false);
+      for (let i = 0; i < n; i++) if (!allow[i]) c[i] = 0;
+      for (let it = 0; it < 3; it++) {
+        nbS.fill(0); nbC.fill(0);
+        for (let t = 0; t < idx.length; t += 3) for (let e = 0; e < 3; e++) { const a = idx[t + e], bb = idx[t + (e + 1) % 3]; nbS[a] += c[bb]; nbC[a]++; nbS[bb] += c[a]; nbC[bb]++; }
+        const nc = new Float32Array(n); for (let i = 0; i < n; i++) nc[i] = nbC[i] ? (c[i] + nbS[i] / nbC[i]) / 2 : c[i]; c = nc;
+      }
+      const sm = (v) => { const t = Math.min(1, Math.max(0, (v - 0.12) / 0.33)); return t * t * (3 - 2 * t); };
+      const base = outPos.length / 3, remap = new Int32Array(n).fill(-1);
+      for (let t = 0; t < idx.length; t += 3) {
+        const a = idx[t], bb = idx[t + 1], cc = idx[t + 2];
+        if (c[a] < 0.08 && c[bb] < 0.08 && c[cc] < 0.08) continue;
+        for (const v of [a, bb, cc]) if (remap[v] < 0) {
+          remap[v] = outPos.length / 3;
+          const nx = na.getX(v), ny = na.getY(v), nz = na.getZ(v), nl = Math.hypot(nx, ny, nz) || 1;
+          outPos.push(pos[v * 3] + nx / nl * 0.0006, pos[v * 3 + 1] + ny / nl * 0.0006, pos[v * 3 + 2] + nz / nl * 0.0006);
+          outA.push(sm(c[v])); outSrc.push(v);
+        }
+        outIdx.push(remap[a], remap[bb], remap[cc]);
+      }
+      void base;
     }
+    if (!outIdx.length) return null;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(outPos, 3));
+    const cols = new Float32Array(outA.length * 4); outA.forEach((a, i) => { cols[i * 4] = cols[i * 4 + 1] = cols[i * 4 + 2] = 1; cols[i * 4 + 3] = a; });
+    geo.setAttribute('color', new THREE.BufferAttribute(cols, 4));
+    geo.setIndex(outIdx); geo.computeVertexNormals();
+    res.geo = geo; void outSrc;
+    return geo;
   }
   setWeights(w) {
     this.weights = w;
