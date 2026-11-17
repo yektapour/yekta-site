@@ -757,32 +757,6 @@
    ]
   },
   {
-   "id": "culturalibre_hair_11",
-   "name": "hair_01",
-   "license": "CC-BY",
-   "author": "culturalibre",
-   "tex": 1,
-   "alpha": true,
-   "color": [
-    0.4,
-    0.4,
-    0.4
-   ]
-  },
-  {
-   "id": "culturalibre_hair_12",
-   "name": "hair_02",
-   "license": "CC-BY",
-   "author": "culturalibre License CC-BY",
-   "tex": 1,
-   "alpha": true,
-   "color": [
-    0.5,
-    0.5,
-    0.5
-   ]
-  },
-  {
    "id": "culturalibre_hair_13",
    "name": "hair_03",
    "license": "CC-BY",
@@ -806,19 +780,6 @@
     0.64,
     0.64,
     0.64
-   ]
-  },
-  {
-   "id": "culturalibre_hair_17",
-   "name": "hair_07",
-   "license": "CC-BY",
-   "author": "culturalibre",
-   "tex": 1,
-   "alpha": false,
-   "color": [
-    0.5,
-    0.5,
-    0.5
    ]
   },
   {

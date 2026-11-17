@@ -175,7 +175,10 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
   .panel{width:100%;border-left:0;border-top:1px solid var(--line)}
   .scroll{overflow:visible}
   .crumb{display:none}
-  .ov.tl{left:10px;top:10px}
+  .ov.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .toolbar{top:auto;bottom:58px;transform:none;left:8px;flex-direction:row}
+  .toolbar button{width:32px;height:32px}
+  .toolbar i{width:1px;height:auto;margin:4px 3px}
 }
 @media (max-width:420px){.ball{width:124px;height:124px}.top .free{display:none}}
 </style>

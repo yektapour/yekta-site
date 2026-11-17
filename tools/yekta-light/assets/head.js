@@ -52,8 +52,8 @@ export function faceWeights(f) {
   const [lx, ly] = f.look || [0, 0];
   if (lx > 0) { out.eyeLookOut_L = (out.eyeLookOut_L || 0) + lx; out.eyeLookIn_R = (out.eyeLookIn_R || 0) + lx; }
   if (lx < 0) { out.eyeLookIn_L = (out.eyeLookIn_L || 0) - lx; out.eyeLookOut_R = (out.eyeLookOut_R || 0) - lx; }
-  if (ly > 0) { out.eyeLookUp_L = (out.eyeLookUp_L || 0) + ly; out.eyeLookUp_R = (out.eyeLookUp_R || 0) + ly; }
-  if (ly < 0) { out.eyeLookDown_L = (out.eyeLookDown_L || 0) - ly; out.eyeLookDown_R = (out.eyeLookDown_R || 0) - ly; }
+  if (ly > 0) { out.eyeLookUp_L = (out.eyeLookUp_L || 0) + ly * 0.8; out.eyeLookUp_R = (out.eyeLookUp_R || 0) + ly * 0.8; }
+  if (ly < 0) { out.eyeLookDown_L = (out.eyeLookDown_L || 0) - ly * 0.5; out.eyeLookDown_R = (out.eyeLookDown_R || 0) - ly * 0.5; }
   if (f.blink) { out.eyeBlink_L = (out.eyeBlink_L || 0) + f.blink; out.eyeBlink_R = (out.eyeBlink_R || 0) + f.blink; }
   for (const k in out) out[k] = Math.max(0, Math.min(1, out[k]));
   return out;
@@ -64,15 +64,19 @@ function nearestMap(src, pts) {
   const cs = 0.006, grid = new Map(), key = (x, y, z) => `${Math.floor(x / cs)},${Math.floor(y / cs)},${Math.floor(z / cs)}`;
   for (let i = 0; i < src.length; i += 3) { const k = key(src[i], src[i + 1], src[i + 2]); let a = grid.get(k); if (!a) grid.set(k, (a = [])); a.push(i / 3); }
   const out = new Int32Array(pts.length / 3);
+  // coarse fallback set for points far from the skin (long hair, braids)
+  const step = Math.max(1, Math.floor(src.length / 3 / 1500)), coarse = [];
+  for (let i = 0; i < src.length / 3; i += step) coarse.push(i);
   for (let j = 0; j < pts.length; j += 3) {
     const x = pts[j], y = pts[j + 1], z = pts[j + 2], gx = Math.floor(x / cs), gy = Math.floor(y / cs), gz = Math.floor(z / cs);
     let best = -1, bd = Infinity;
-    for (let r = 1; r < 40 && best < 0; r++) {
+    for (let r = 1; r <= 3 && best < 0; r++) {
       for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) for (let dz = -r; dz <= r; dz++) {
         const a = grid.get(`${gx + dx},${gy + dy},${gz + dz}`); if (!a) continue;
         for (const i of a) { const d = (src[i * 3] - x) ** 2 + (src[i * 3 + 1] - y) ** 2 + (src[i * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = i; } }
       }
     }
+    if (best < 0) for (const i of coarse) { const d = (src[i * 3] - x) ** 2 + (src[i * 3 + 1] - y) ** 2 + (src[i * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = i; } }
     out[j / 3] = Math.max(0, best);
   }
   return out;

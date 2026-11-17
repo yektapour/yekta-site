@@ -159,6 +159,7 @@ async function showModel(name) {
   if (M.head) { if (tool !== 'pick' && tool !== 'zoom') setTool('pick'); await applyHeadParts(); }
   applyPose();
   updateTabs();
+  refreshUI();
   $('loading').classList.add('done');
   if (kindChanged) setView('3/4', true);
   dirty();
@@ -280,6 +281,7 @@ function setView(name, inst) {
   let tgt = new THREE.Vector3(0, H * 0.53, 0), dist = (H * 0.62) / Math.tan((camera.fov * Math.PI) / 360);
   if (cur && cur.head) { tgt = cur.center.clone(); dist = (mode === 'face' ? 0.15 : 0.2) / Math.tan((camera.fov * Math.PI) / 360); }
   else if (mode === 'face' && cur) { tgt = cur.rig.pos('head').add(new THREE.Vector3(0, 0.07, 0)); dist = 0.34 / Math.tan((camera.fov * Math.PI) / 360); }
+  if (camera.aspect < 0.85) { dist *= 1.22; tgt.y -= cur && cur.head ? 0.012 : 0.08; }
   const to = tgt.clone().add(new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(dist));
   if (inst) { controls.target.copy(tgt); camera.position.copy(to); controls.update(); dirty(); return; }
   const t0 = controls.target.clone(), p0 = camera.position.clone(), st = performance.now();
@@ -887,12 +889,12 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
     const n = pad.width; g.clearRect(0, 0, n, n);
     g.fillStyle = '#1b1b1d'; g.beginPath(); g.arc(n / 2, n / 2, n / 2 - 2, 0, 7); g.fill();
     g.strokeStyle = '#2b2b2f'; g.lineWidth = 2; g.beginPath(); g.moveTo(n / 2, 8); g.lineTo(n / 2, n - 8); g.moveTo(8, n / 2); g.lineTo(n - 8, n / 2); g.stroke();
-    const [lx, ly] = F().look; const x = n / 2 - lx * (n / 2 - 22), y = n / 2 - ly * (n / 2 - 22);
+    const [lx, ly] = F().look; const x = n / 2 + lx * (n / 2 - 22), y = n / 2 - ly * (n / 2 - 22);
     g.fillStyle = '#f3b44a'; g.beginPath(); g.arc(x, y, 14, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill();
   };
   pad.addEventListener('pointerdown', (e) => {
     pad.setPointerCapture(e.pointerId);
-    const mv = (ev) => { const r = pad.getBoundingClientRect(), R = r.width / 2; let x = -(ev.clientX - r.left - R) / (R - 11), y = -(ev.clientY - r.top - R) / (R - 11); const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } F().look = [Math.round(x * 100) / 100, Math.round(y * 100) / 100]; applyFace(); drawPad(); };
+    const mv = (ev) => { const r = pad.getBoundingClientRect(), R = r.width / 2; let x = (ev.clientX - r.left - R) / (R - 11), y = -(ev.clientY - r.top - R) / (R - 11); const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } F().look = [Math.round(x * 100) / 100, Math.round(y * 100) / 100]; applyFace(); drawPad(); };
     mv(e); const up = () => { pad.removeEventListener('pointermove', mv); pad.removeEventListener('pointerup', up); commit(); };
     pad.addEventListener('pointermove', mv); pad.addEventListener('pointerup', up);
   });
@@ -915,6 +917,18 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
       [['Match hair', null], ['Black', [0.05, 0.045, 0.04]], ['Dark brown', [0.12, 0.08, 0.05]], ['Brown', [0.28, 0.17, 0.1]], ['Blonde', [0.6, 0.48, 0.32]], ['Gray', [0.5, 0.5, 0.5]]].forEach(([n, c]) => { const b = h('button', 'swb'); b.title = n; if (c) b.style.background = LM.hex(c); else { b.textContent = '='; b.classList.add('orig'); } b.addEventListener('click', () => { HS().browCol = c; applyHeadParts(); commit(); refreshUI(); }); sw.append(b); onRefresh(() => b.classList.toggle('on', JSON.stringify(HS().browCol) === JSON.stringify(c))); });
     }
     const grid = h('div', 'thumbs'); P.append(grid);
+    const ORDER = kind === 'hair' ? {
+      F: ['ponytail01', 'rehmanpolanski_hair_bun_brown', 'elvs_50s_updo', 'long01', 'toigo_curled_under_bob', 'toigo_blunt_bob', 'toigo_blunt_bob_with_bangs', 'toigo_inverted_bob', 'toigo_curled_under_bob_with_bangs', 'toigo_inverted_bob_with_bangs', 'elvs_hazel_hair', 'elvs_adrienne_hair', 'elvs_ashley_may_hair', 'elvs_daisy_hair', 'elvs_keylth_hair', 'elvs_katherine_hair', 'elvs_lady_hippy_hair', 'elvs_inverted_curly_bob', 'elvs_wavy_bob', 'bob01', 'bob02', 'braid01', 'elvs_braid_bun', 'elvs_french_braid_variation', 'elvs_double_mh_braid', 'elvs_unkempt_french_braid', 'culturalibre_hair_01', 'o4saken_long01', 'o4saken_curly01', 'punkduck_alpha7_long', 'punkduck_alpha7_long2', 'punkduck_alpha7_curly', 'punkduck_alpha7_curly2', 'elvs_short_daisy_hair', 'littleright_bobcut_hair', 'elvs_island_princess_hair'],
+      M: ['short02', 'short04', 'short01', 'short03', 'culturalibre_hair_14', 'elvs_grump_hair', 'culturalibre_hair_02', 'culturalibre_hair_05', 'elvs_short_side_do', 'elvs_maxwell_hair', 'afro01', 'elvs_micky_afro', 'cortu_short_messy_hair', 'faydaen_hair_1', 'sonntag78_junglebook_hair', 'o4saken_long01', 'long01', 'ponytail01'],
+    } : { F: [], M: [] };
+    const LAST = ['learning_anime_hair', 'culturalibre_hair_06', 'cortu_shaggy_green_hair', 'cortu_strawberry_cloud_hair', 'elvs_reverse_french_braid_bun', 'culturalibre_hair_11', 'culturalibre_hair_12', 'elvs_witchy_lil_bob'];
+    const btns = new Map(); let orderedFor = null;
+    const reorder = () => {
+      const g = cur && cur.head ? cur.head : 'F'; if (orderedFor === g || !btns.size) return; orderedFor = g;
+      const pref = ORDER[g], rank = (id) => (id === '' ? -1 : pref.indexOf(id) >= 0 ? pref.indexOf(id) : LAST.indexOf(id) >= 0 ? 1000 + LAST.indexOf(id) : 500);
+      [...btns.keys()].sort((a, c) => rank(a) - rank(c)).forEach((id) => grid.append(btns.get(id)));
+    };
+    onRefresh(reorder);
     getCatalog().then((cat) => {
       const items = [{ id: '', name: 'None' }].concat(cat[kind] || []);
       cnt.textContent = `${items.length - 1} styles`;
@@ -922,9 +936,10 @@ function selectJoint(k) { selJoint = k; if (!rigVisible()) setTool('rotate'); pl
         const b = h('button', 'thumb'); b.title = it.name + (it.author ? ` — ${it.author}` : '');
         if (it.id) { const im = h('img'); im.loading = 'lazy'; im.alt = it.name; im.src = thumbUrl(it.id); im.onerror = () => { im.remove(); b.textContent = it.name; }; b.append(im); } else b.textContent = 'None';
         b.addEventListener('click', async () => { HS()[kind] = it.id; $('loading').classList.remove('done'); await applyHeadParts(); $('loading').classList.add('done'); commit(); refreshUI(); });
-        grid.append(b);
+        grid.append(b); btns.set(it.id, b);
         onRefresh(() => b.classList.toggle('on', (HS()[kind] || '') === it.id));
       });
+      orderedFor = null; reorder();
     }).catch(() => { cnt.textContent = 'unavailable'; });
   };
   gallery('hair', 'Hair');
