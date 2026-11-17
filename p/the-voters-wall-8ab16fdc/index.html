@@ -62,6 +62,10 @@ body{font-family:Caslon,Georgia,serif;color:var(--ink);user-select:none;-webkit-
 #credit a{color:#ffdf9a}
 @media (max-width:600px){#credit{display:none}#hint{font-size:15px}}
 @media (max-height:520px){#credit{display:none}#hint{bottom:auto;top:max(12px,env(safe-area-inset-top));font-size:15px}#ui button{width:38px;height:38px;font-size:19px}#ui{gap:6px}}
+/* older browsers (Safari 14 and earlier): same layout without inset / aspect-ratio */
+#view,#vig{top:0;right:0;bottom:0;left:0}
+.note .pp,.note .sh{top:0;right:0;bottom:0;left:0}
+#ui button{-webkit-backdrop-filter:blur(4px)}
 /* phones and tablets: each paper is flattened into one picture (no live blend modes or filters), so iPhone Safari stays light */
 .lite .note{filter:none;transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
 .lite .note:hover{filter:none}
@@ -257,7 +261,7 @@ async function speak() {
   $('#hint').classList.add('off'); king.classList.remove('hop'); void king.offsetWidth; king.classList.add('hop', 'on'); tick(520, .05);
   txt.textContent = text; bub._k = null; bub.classList.remove('show'); void bub.offsetWidth; bub.classList.add('show'); placeBubble();
   const caret = document.createElement('span'); caret.className = 'caret';
-  for (let i = 1; i <= text.length; i++) { if (tok !== talkTok) return; txt.textContent = text.slice(0, i); txt.appendChild(caret); const ch = text[i - 1]; if (i % 3 === 1 && ch !== ' ') tick(380 + Math.random() * 120, .018);
+  for (let i = 1; i <= text.length; i++) { if (tok !== talkTok) return; txt.textContent = text.slice(0, i); txt.appendChild(caret); placeBubble(); const ch = text[i - 1]; if (i % 3 === 1 && ch !== ' ') tick(380 + Math.random() * 120, .018);
     await sleep(/[.?!]/.test(ch) && (text[i] === ' ' || text[i] === '\n') ? 160 : ch === ',' ? 70 : ch === '\n' ? 140 : 24); }
   caret.remove();
 }
@@ -265,6 +269,13 @@ function hush() { talkTok++; bub.classList.remove('show'); king.classList.remove
 let AC = null; function tick(f, v) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime; o.type = 'triangle'; o.frequency.setValueAtTime(f, t); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .07); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .08); } catch (e) {} }
 fit(false); setTimeout(() => $('#hint').classList.add('off'), 9000);
 window.__wall = { speak, get s() { return s; }, fit };
+</script>
+<script>
+/* older browsers without aspect-ratio: give the papers and photos their height */
+(function () {
+  if (window.CSS && CSS.supports && CSS.supports('aspect-ratio', '1')) return;
+  document.querySelectorAll('.note').forEach(function (a) { a.style.height = (a.offsetWidth * 720 / 595) + 'px'; var ph = a.querySelector('.ph'); if (ph) ph.style.height = ph.offsetWidth + 'px'; });
+})();
 </script>
 <script>
 /* flatten every paper into a single canvas on touch devices (same look, a fraction of the memory) */
