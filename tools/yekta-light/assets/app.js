@@ -99,6 +99,24 @@ const texLoader = new THREE.TextureLoader();
 const loadTex = (url, srgb = true) => new Promise((res, rej) => texLoader.load(url, (t) => { t.flipY = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; res(t); }, undefined, rej));
 let catalog = null;
 const getCatalog = async () => catalog || (catalog = await (await fetch(catalogUrl)).json());
+let _lashTex = null;
+function lashTexture() {
+  if (_lashTex) return _lashTex;
+  // 6 lash cards stacked in V (each ~0.14 tall, root at the low-V edge); strands run along V
+  const W = 1024, Hh = 1024, c = document.createElement('canvas'); c.width = W; c.height = Hh; const g = c.getContext('2d');
+  g.clearRect(0, 0, W, Hh); g.lineCap = 'round';
+  for (let k = 0; k < 6; k++) {
+    const v0 = (0.014 + k / 6) * Hh, v1 = v0 + 0.14 * Hh;
+    for (let i = 0; i < 320; i++) {
+      const x = Math.random() * W, len = (v1 - v0) * (0.55 + Math.random() * 0.45), bend = (Math.random() - 0.5) * 10;
+      const grd = g.createLinearGradient(0, v0, 0, v0 + len); grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.7, 'rgba(255,255,255,0.9)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+      g.strokeStyle = grd; g.lineWidth = 3.5 + Math.random() * 3.5;
+      g.beginPath(); g.moveTo(x, v0); g.quadraticCurveTo(x + bend * 0.4, v0 + len * 0.5, x + bend, v0 + len); g.stroke();
+    }
+  }
+  _lashTex = new THREE.CanvasTexture(c); _lashTex.flipY = false; _lashTex.wrapS = _lashTex.wrapT = THREE.RepeatWrapping; _lashTex.colorSpace = THREE.SRGBColorSpace;
+  return _lashTex;
+}
 async function loadHead(name, def) {
   const H = new Head(await loadGLTF(headUrl(def.head)));
   for (const o of H.meshes) {
@@ -109,7 +127,7 @@ async function loadHead(name, def) {
     m.name = n;
     const skin = n === 'M_Face' || n === 'M_BackHead';
     o.material = patchMaterial(m, U, skin ? {} : { uSkinMaskOn: { value: 0 }, uTexMode: { value: 1 } });
-    if (n === 'M_EyeLashes') o.castShadow = false;
+    if (n === 'M_EyeLashes') { o.castShadow = false; { const lt = lashTexture().clone(); if (src.map) { lt.offset.copy(src.map.offset); lt.repeat.copy(src.map.repeat); lt.rotation = src.map.rotation; lt.center.copy(src.map.center); } lt.needsUpdate = true; o.material.map = lt; } o.material.alphaTest = 0.3; o.material.transparent = false; o.material.depthWrite = true; o.material.color.setRGB(0.02, 0.015, 0.012); o.material.needsUpdate = true; }
   }
   const texAvg = H.skin.material.map ? texAverage(H.skin.material.map) : [0.6, 0.4, 0.3];
   cache[name] = { root: H.root, rig: null, head: def.head, headObj: H, mesh: H.root, col: null, hasMap: true, height: 0.3, texAvg, center: H.center, parts: {} };
@@ -235,6 +253,18 @@ async function applyHeadParts() {
     }
   }
   const hm = H.attached.hair && H.attached.hair.mesh, bm = H.attached.brows && H.attached.brows.mesh;
+  // scalp cap under the hair (rebuilt when the hairstyle changes)
+  if (cur.capFor !== (hm ? hm.userData.id : '')) {
+    cur.capFor = hm ? hm.userData.id : '';
+    const geo = hm ? H.buildCap(hm) : null;
+    if (geo) {
+      const cm = new THREE.MeshStandardMaterial({ vertexColors: true, alphaHash: true });
+      const cap = new THREE.Mesh(geo, patchMaterial(cm, U, { uSkinMaskOn: { value: 0 }, uTexMode: { value: 1 } }));
+      cap.userData = { kind: 'cap' }; H.attach('cap', cap); cap.castShadow = false;
+    } else H.attach('cap', null);
+  }
+  const capM = H.attached.cap && H.attached.cap.mesh;
+  if (capM && hm) { const c = hs.hairCol ? LM.lin3(hs.hairCol) : hm.userData.avg; capM.material.color.setRGB(c[0] * 0.7, c[1] * 0.7, c[2] * 0.7); }
   if (hm) { const ud = hm.userData; if (ud.hasTex) tintPart(hm.material, ud.avg, hs.hairCol); else hm.material.color.setRGB(...(hs.hairCol ? LM.lin3(hs.hairCol) : ud.avg)); }
   {
     const hairLin = hm ? (hs.hairCol ? LM.lin3(hs.hairCol) : hm.userData.avg) : null;
