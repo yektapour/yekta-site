@@ -9,7 +9,7 @@ Process name: overthink(paint)ing
 - [About YEKTA](https://yektapour.com/about/): who YEKTA is and how he works
 
 ## Works
-- [Bearer](https://yektapour.com/work/bearer/): Digital painting, 2026. A heavy man hangs in empty space, folded into himself, eyes shut tight, biting down on his own arm. A single red thread runs from above, wraps around his chest, his legs and his ankles, and drops away below him. He grips it in one fist. Whatever it is, he is carrying it, and he is holding on to the very thing that binds him.
+- [Bearer](https://yektapour.com/work/bearer/): Digital painting, 2026. A heavy man hangs in empty space, folded into himself, eyes shut tight, biting down on his own arm. A single red thread runs from above, wraps around his chest, his legs and his ankles, and drops away below him. His hand is clenched, but it holds nothing. Whatever the thread is, he never picked it up, and he is carrying it anyway.
 - [Docile Body](https://yektapour.com/work/docile-body/): Digital painting, 2026. Both the box and the way out take a toll on the person. Still, someone has to step outside for the walls to move.
 - [Drained Flesh](https://yektapour.com/work/drained-flesh/): Digital painting, 2026. A heavy man leans against a wall, eyes closed, arms wrapped around his own body. Beside him stand smooth mannequins, then a detached leg, then a head resting on a block, all tied together by one red thread. A metamorphosis that goes the other way: from flesh, to form, to fragments.
 - [Futility](https://yektapour.com/work/futility/): Digital painting, 2026. A man kneels in a bare room, his hand on a small block, facing a wall with a narrow triangular hole at its foot. A thin red cord runs across the floor toward it. As an interactive piece, every touch makes him push: five blows bring the wall down, and behind it stands the same wall.
@@ -58,7 +58,7 @@ Process name: overthink(paint)ing
 - [CHECKMEME Meme Maker](https://yektapour.com/tools/checkmeme-meme-maker/): Make your own CHECKMEME meme. Pick one or two characters from the painting, write their lines, and download a PNG or an animated GIF. Free, runs in your browser.
 
 ## Articles
-- [Bearer: Holding On to What Binds You](https://yektapour.com/articles/bearer/): On a painting of a man suspended in empty space, wrapped in a red thread he refuses to let go of.
+- [Bearer: What the Body Carries](https://yektapour.com/articles/bearer/): On a painting of a man suspended in empty space, wrapped in a red thread that was never his to hold.
 - [Docile Body: The Box and the Way Out](https://yektapour.com/articles/docile-body/): On a painting about a man who has lived in a box for so long that his body has taken its shape, and what it costs to step outside.
 - [CHECKMEME | The Move: A Painting That Talks Back](https://yektapour.com/articles/checkmeme/): An interactive meme for The Memes by 6529: a game of chess where every piece is a meme, and every piece talks back.
 - [Drained Flesh: A Metamorphosis That Goes the Other Way](https://yektapour.com/articles/drained-flesh/): On a painting about how a human being can slowly become something unrecognizable, and nobody can say exactly when it happened.
