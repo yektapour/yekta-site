@@ -2,6 +2,26 @@
  "channel": "UCZEsguNUORbpBVoxmewQizg",
  "items": [
   {
+   "id": "5zdd1Ep9ttk",
+   "title": "I lit a 3D head, then painted a devil #shorts",
+   "published": "2026-11-28T09:21:17+00:00",
+   "short": true,
+   "vtab": false,
+   "checked": 1,
+   "live": false,
+   "livechk": 1
+  },
+  {
+   "id": "t_pZ3cTotis",
+   "title": "From a Free 3D Head to a Devil | Painting Process",
+   "published": "2026-11-28T09:08:37+00:00",
+   "short": false,
+   "vtab": true,
+   "checked": 1,
+   "live": false,
+   "livechk": 1
+  },
+  {
    "id": "xL3W0w18Iow",
    "title": "Every voice leaves a fold. #shorts",
    "published": "2026-11-26T20:23:26+00:00",
@@ -78,7 +98,7 @@
    "short": false,
    "vtab": false,
    "checked": 1,
-   "live": false,
+   "live": true,
    "livechk": 1
   },
   {
@@ -88,7 +108,7 @@
    "short": false,
    "vtab": false,
    "checked": 1,
-   "live": false,
+   "live": true,
    "livechk": 1
   },
   {
@@ -98,7 +118,7 @@
    "short": false,
    "vtab": false,
    "checked": 1,
-   "live": false,
+   "live": true,
    "livechk": 1
   },
   {
@@ -128,7 +148,7 @@
    "short": false,
    "vtab": false,
    "checked": 1,
-   "live": false,
+   "live": true,
    "livechk": 1
   },
   {
